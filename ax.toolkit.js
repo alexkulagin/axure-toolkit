@@ -42,6 +42,27 @@
 			}
 		};
 
+
+		/**
+		 * "DOMContentLoaded" и "onload" предоставляют возможность вызова функции до
+		 *  и после отработки события из прототипа "OnPageLoad" ("OnPageLoad" срабатывает
+		 *  сразу после загрузки страницы целиком)
+		 */
+		
+		_w.onload = _afterPageOnLoad;
+		document.addEventListener("DOMContentLoaded", _beforePageOnLoad);
+
+
+		const _beforePageOnLoad = function ()
+		{
+			console.log( 'Before OnPageLoad' );
+		};
+
+		const _afterPageOnLoad =  function ()
+		{
+			console.log( 'After OnPageLoad' );
+		};
+
 	})();
 
 
