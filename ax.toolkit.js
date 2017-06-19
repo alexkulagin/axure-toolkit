@@ -5,6 +5,135 @@
 //┐
 //│  ╔═══════════════════════════════╗
 //│  ║                               ║
+//╠──╢  JS TOOLKIT                   ║
+//│  ║                               ║
+//│  ╚═══════════════════════════════╝
+//┘
+
+	window.toolkitActivation = function ()
+	{
+		if (!window.$axure || !window.jQuery) return;
+
+		!(function ()
+		{
+			'use strict';
+
+			const _w = window,
+				  _a = _w.$axure,
+				  _private = _a.internal(function (ax) { return ax }),
+				  _instance;
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  AXURE TOOLKIT                          │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				function AxureToolkit ()
+				{
+					if (!_instance) 
+					{
+						this.version = '1.0';
+						this.name = 'axure.toolkit';
+
+						_w.$m = _instance = this;
+
+						_extend() && _initialize('@initializer');
+					}
+				};
+
+
+				/**
+				 * Регистрация функций-расширений
+				 */
+				
+				const _extend = function ()
+				{
+					_private.public.fn.run = _run;
+
+					return true;
+				}
+
+
+				/**
+				 * Инициализация расширения
+				 * - находит и запускает сценарии
+				 * - оповещает о готовности виджеты
+				 */
+				
+				const _initialize = function (initializer)
+				{
+					var bundle = [], imports = [], init = [], i;
+
+					_a('*').each(function(element, elementId)
+					{
+						if (element.label) {
+							element.label.match('bundle.') && bundle.push(element);
+							element.label.match('import.') && imports.push(element);
+							element.label.match('init.') && init.push(element);
+						}
+					});
+
+					if (imports.length > 0) 
+					{
+						for (i = 0; i < imports.length; i++)
+						{
+							_a('@' + imports[i].label).run().$().remove();
+						}
+					}
+
+					if (bundle.length > 0)
+					{
+						for (i = 0; i < bundle.length; i++)
+						{
+							_a('@' + bundle[i].label).$().remove();
+						}
+					}
+
+					console.log('Axure extensions initialized and ready!');
+
+					_a(initializer).moveBy(0, 0, {});
+
+					if (init.length > 0) 
+					{
+						for (i = 0; i < init.length; i++)
+						{
+							_a('@' + init[i].label).moveBy(0, 0, {});
+						}
+					}
+				};
+
+				
+				/**
+				 * Добавляет возможность выполнения сценария внутри виджета
+				 */
+				
+				const _run = function ()
+				{
+					var elementIds = this.getElementIds();
+
+					for (var i = 0; i < elementIds.length; i++)
+					{
+						var script = _a('#' + elementIds[i]);
+
+						try { _w.eval(script.text()) } 
+						catch (error) {
+							return console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+						}
+					}
+
+					return this;
+				};
+		})();
+	};
+
+
+
+
+//┐
+//│  ╔═══════════════════════════════╗
+//│  ║                               ║
 //╠──╢  JS INITIALIZER               ║
 //│  ║                               ║
 //│  ╚═══════════════════════════════╝
@@ -55,7 +184,7 @@
 
 		const _beforePageOnLoad = function ()
 		{
-			_fix();
+			_fix() && _w.toolkitActivation();
 			// console.log( 'Before OnPageLoad' );
 		};
 
