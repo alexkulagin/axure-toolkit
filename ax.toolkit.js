@@ -20,8 +20,9 @@
 
 			const _w = window,
 				  _a = _w.$axure,
-				  _private = _a.internal(function (ax) { return ax }),
-				  _instance;
+				  _private = _a.internal(function (ax) { return ax });
+				  
+			var _instance;
 
 
 			//┐
@@ -39,7 +40,7 @@
 
 						_w.$m = _instance = this;
 
-						_extend() && _initialize('@initializer');
+						_extend() && _initialize('@toolkit.ready');
 					}
 				};
 
@@ -213,6 +214,8 @@
 		
 		const _fix = function ()
 		{
+			var _private = _w.$axure.internal(function (ax) { return ax });
+
 			_private.public.getGlobalVariable = _private.getGlobalVariable = function(name) {
 				return _private.globalVariableProvider.getVariableValue(name);
 			};
