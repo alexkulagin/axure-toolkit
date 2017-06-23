@@ -20,9 +20,11 @@
 
 			const _w = window,
 				  _a = _w.$axure,
-				  _private = _a.internal(function (ax) { return ax });
+				  _private = _a.internal(function (ax) { return ax }),
+				  _axSTO = _private.evaluateSTO;
 				  
-			var _instance;
+			var _instance, _fn;
+
 
 
 			//┐
@@ -45,12 +47,42 @@
 				};
 
 
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PUBLIC TOOLKIT METHODS                 │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				AxureToolkit.prototype = 
+				{
+					/**
+					 * Добавляет новую функцию для вызова из выражений Axure RP
+					 * @param {string} name - имя функции по которому она будет вызываться
+					 * @param {function} func - функция для выражения
+					 */
+					
+					addExpression: function (name, func)
+					{
+						_fn[name] = func;
+					}
+				};
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PRIVATE TOOLKIT METHODS                │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
 				/**
 				 * Регистрация функций-расширений
 				 */
 				
 				const _extend = function ()
 				{
+					_private.evaluateSTO = _sto;
 					_private.public.fn.run = _run;
 
 					return true;
@@ -120,11 +152,57 @@
 
 						try { _w.eval(script.text()) } 
 						catch (error) {
-							return console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+							console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
 						}
 					}
 
 					return this;
+				};
+
+
+				/**
+				 * Переопределяет функцию _private.evaluateSTO для внедрения пользовательских функций в выражения
+				 * @param {object} sto - объект sto
+				 * @param {object} scope - область видимости
+				 * @param {object} eventInfo - соержимое вызывающего события
+				 */
+				
+				const _sto  = function (sto, scope, eventInfo)
+				{
+					if ((sto.sto !== 'fCall') || (sto.func !== 'trim') || (sto.arguments.length === 0)) {
+						return _axSTO.apply(null, arguments);
+					}
+
+					var thisObj = _axSTO(sto.thisSTO, scope, eventInfo);
+					
+					if (sto.thisSTO.computedType != 'string') {
+						thisObj = thisObj.toString();
+					}
+
+					var fn = _fn[thisObj.trim()];
+
+					if (!fn || typeof (fn) !== 'function')
+					{
+						console.error('Error:\nMethod "' + thisObj + '" not found!');
+					} 
+
+					else {
+						var args = [];
+
+						for (var i = 0; i < sto.arguments.length; i++) {
+							args.push(_axSTO(sto.arguments[i], scope, eventInfo));
+						}
+
+						if (false) return fn.apply({scope: scope, eventInfo: eventInfo}, args);
+						
+						try {
+							return fn.apply({scope: scope, eventInfo: eventInfo}, args);
+						} catch (error) {
+							console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+						}
+					}
+
+					return '';
 				};
 
 
