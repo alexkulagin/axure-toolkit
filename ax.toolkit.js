@@ -23,7 +23,8 @@
 				  _private = _a.internal(function (ax) { return ax }),
 				  _axSTO = _private.evaluateSTO;
 				  
-			var _instance, _fn;
+			var _fn = {},
+				_instance;
 
 
 
