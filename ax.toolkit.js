@@ -21,10 +21,11 @@
 			const _w = window,
 				  _a = _w.$axure,
 				  _private = _a.internal(function (ax) { return ax }),
-				  _axSTO = _private.evaluateSTO;
+				  _axSTO = _private.evaluateSTO,
+				  _listeners = [],
+				  _fn = {};
 				  
-			var _fn = {},
-				_instance;
+			var _instance;
 
 
 
@@ -66,6 +67,38 @@
 					addExpression: function (name, func)
 					{
 						_fn[name] = func;
+					},
+
+
+					/**
+					 * Отправляет сообщение
+					 * @param {string, array} channel - название канала или список каналов
+					 * @param {all} message - содержимое сообщения
+					 */
+					
+					send: function (channel, message)
+					{
+						if (!channel || (!_isString(channel) && !_isArray(channel))) return;
+						_w.postMessage({ channel: channel, message: message }, '*');
+					},
+
+
+					/**
+					 * Добавляет слушателя в рассылку
+					 * @param {string} channel - название канала
+					 * @param {function, string, array} listener - функция обратного вызова
+					 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
+					 *
+					 * listener value:
+					 * function - функция обратного вызова
+					 * string - вызывает OnMove в конкретном виджете (имя виджета)
+					 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
+					 */
+					
+					listen: function (channel, listener, once)
+					{
+						if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
+						_listeners.push({ channel: channel, listener: listener, once: once });
 					}
 				};
 
@@ -99,6 +132,8 @@
 				const _initialize = function (initializer)
 				{
 					var bundle = [], imports = [], init = [], i;
+
+					_w.addEventListener("message", _listener);
 
 					_a('*').each(function(element, elementId)
 					{
@@ -204,6 +239,114 @@
 					}
 
 					return '';
+				};
+
+
+				/**
+				 * Обработчик post message
+				 */
+				
+				const _listener = function (event)
+				{
+					var source = event.source,
+						data = event.data,
+						channel = data.channel,
+						message = data.message,
+						index = 0;
+
+					for (index; index < _listeners.length; index++)
+					{
+						if (!_listeners[index]) continue;
+
+						if (_isChannelMatch(_listeners[index].channel, channel))
+						{
+							var l = _listeners[index].listener;
+
+							if (_isString(l)) {
+								_axure('@' + l).moveBy(0, 0, {});
+							}
+
+							if (_isFunction(l)) {
+								l.call(_window, channel, message);
+							}
+
+							if (_isArray(l))
+							{
+								for (var i = 0; i < l.length; i++)
+								{
+									if (_isString(l[i])) {
+										_axure('@' + l[i]).moveBy(0, 0, {});
+									}
+
+									if (_isFunction(l[i])) {
+										l[i].call(_window, channel, message);
+									}
+								}
+							}
+
+							if (_listeners[index].once) {
+								delete _listeners[index];
+							}
+						}
+					}
+
+					if (_window.parent !== source)
+					{
+						_window.parent.postMessage(data, '*');
+					}
+
+					if (_frames.length > 0) 
+					{
+						for (index = 0; index < _frames.length; index++) {
+							if (_frames[index] !== event.source) {
+								_frames[index].postMessage(data, '*');
+							}
+						}
+					}
+				};
+
+
+				/**
+				 * Осуществляет поиск и сравнение каналов
+				 * @param  {string, array}  a - канал или список каналов на которые подписан слушатель
+				 * @param  {string, array}  b - канал или список каналов для которых предназначено сообщение
+				 * @return {Boolean} вовращает результат сравнения
+				 */
+				
+				const _isChannelMatch = function (a, b)
+				{
+					if (a == b) return true;
+
+					if (_isArray(a))
+					{
+						for (var i = 0; i < a.length; i++)
+						{
+							if (_isArray(b))
+							{
+								for (var j = 0; j < b.length; j++)
+								{
+									if (a[i] == b[j]) return true;
+								}
+							} 
+
+							else {
+								if (a[i] == b) return true;
+							}
+						}
+					} 
+
+					else {
+
+						if (_isArray(b))
+						{
+							for (var i = 0; i < b.length; i++)
+							{
+								if (b[i] == a) return true;
+							}
+						}
+					}
+
+					return false;
 				};
 
 
