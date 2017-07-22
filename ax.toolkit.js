@@ -44,7 +44,7 @@
 
 						_w.$m = _instance = this;
 
-						_extend() && _initialize('@toolkit.ready');
+						_extend() && _initialize();
 					}
 				};
 
@@ -129,7 +129,7 @@
 				 * - оповещает о готовности виджеты
 				 */
 				
-				const _initialize = function (initializer)
+				const _initialize = function ()
 				{
 					var bundle = [], imports = [], init = [], i;
 
@@ -138,9 +138,9 @@
 					_a('*').each(function(element, elementId)
 					{
 						if (element.label) {
-							element.label.match('bundle.') && bundle.push(element);
-							element.label.match('import.') && imports.push(element);
-							element.label.match('init.') && init.push(element);
+							element.label.match('ax.bundle.') && bundle.push(element);
+							element.label.match('ax.import.') && imports.push(element);
+							element.label.match('ax.init.') && init.push(element);
 						}
 					});
 
@@ -162,7 +162,7 @@
 
 					console.log('Axure extensions initialized and ready!');
 
-					_a(initializer).moveBy(0, 0, {});
+					_a('@ax.ready').moveBy(0, 0, {});
 
 					if (init.length > 0) 
 					{
