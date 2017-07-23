@@ -14,6 +14,7 @@
 	{
 		if (!window.$axure || !window.jQuery) return;
 
+
 		// TOOLKIT UTILS
 		
 		const _isArray = Array.isArray || function(obj)
@@ -38,6 +39,103 @@
 		{
 			return !isNaN(parseFloat(n)) && isFinite(n);
 		};
+
+
+		/**
+		 * Находит виджеты в HTML представлении
+		 * @param {object} target - объект поиска
+		 * @param {[string, array]} name - название виджета или список названий
+		 * @param {[number, array]} childId - индекс или список индексов потомков
+		 * @return {array} - возвращает объект виджета или null
+		 */
+		
+		const _findWidget = function (target, name, childId)
+		{
+			if (!name)  return null;
+
+			var view = [],
+				list = [],
+				$object = target.$(),
+				query = _getWidgetStringQuery(name),
+				finded;
+
+			const each = function (f, v) {
+				$.each(f, function( index, value ) {
+					v.push(value);
+				});
+			};
+
+
+			if (childId == undefined)
+			{
+				finded = $object.find(query);
+				each(finded, view);
+			} 
+
+			else 
+			{
+				if (_isArray(childId))
+				{
+					for (var i = 0; i < childId.length; i++)
+					{
+						finded = $('#' + childId[i]).find(query);
+
+						each(finded, view);
+					}
+				}
+
+				if (_isString(childId))
+				{
+					finded = $('#' + childId).find(query);
+
+					each(finded, view);
+				}
+			}
+
+			for (var v in view) {
+				list[v] = view[v].id;
+			}
+
+			if (list.length == 0) return null;
+
+			return $axure(function (element, elementId)
+			{
+				for (var n = 0; n < list.length; n++) {
+					if (list[n] == elementId) {
+						return true;
+					}
+				};
+
+				return false;
+			});
+		};
+
+
+		/**
+		 * Формирует запрос для метода findWidgetID
+		 * @param  {[number, array]} name - имя виджета
+		 * @return {string} - возвращает подготовленный запрос
+		 */
+		
+		const _getWidgetStringQuery = function (name)
+		{
+			var query = '', i = 0, l;
+
+			if (_isArray(name) && name.length > 0)
+			{
+				l = name.length;
+
+				for (i; i < l; i++) {
+					query += '[data-label="' + name[i] + '"],'
+				}
+			} else {
+				query = '[data-label="' + name + '"]'
+			}
+
+			return query;
+		};
+
+
 
 
 		// AXURE TOOLKIT
@@ -404,6 +502,8 @@
 		})();
 
 
+
+
 		// DYNAMIC PANEL EXTENSION
 		
 		!(function ()
@@ -508,6 +608,30 @@
 						if (nextState && nextState.index != currentState.index) {
 							_p.target.SetPanelState(nextState.index, options);
 						}
+					},
+
+
+					/**
+					 * Возвращает найденный по имени виджет из конкретного состояния динамической панели
+					 * @param {[string, array]} name - имя виджета или список имен
+					 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
+					 * @return {object} - возвращает объект виджета
+					 */
+					
+					getWidget: function (name, state)
+					{
+						var _p = this.private,
+							states = _p.states;
+
+						if (states.length == 0) return null;
+						
+						if (state) {
+							state = _getPanelStateId(states, state);
+						} else {
+							state = undefined;
+						}
+
+						return _findWidget(_p.target, name, state);
 					}
 
 				};
@@ -542,6 +666,51 @@
 					}
 
 					return states;
+				};
+
+
+				/**
+				 * Возвращает список идентификаторов состояний панели
+				 * @param {array} states — список состояний
+				 * @param  {[string, number, array]} state — индекс/лейбл состояния
+				 * @return {array} — возвращает null или список идентификаторов
+				 */
+				
+				const _getPanelStateId = function (states, state)
+				{
+					var total = states.length, 
+						i, n, s, list;
+
+					if (_isArray(state)) 
+					{
+						list = [];
+
+						for (n = 0; n < state.length; n++)
+						{
+							s = state[n];
+
+							for (i = 0; i < total; i++)
+							{
+								if ((_isString(s) && states[i].label == s) || (_isNumber(s) && states[i].index == s)) {
+									list.push(states[i].id);
+								}
+							}
+						}
+
+						if (list.length > 0) return list;
+					}
+
+					else {
+						for (i = 0; i < total; i++)
+						{
+							if ((_isString(state) && states[i].label == state) || (_isNumber(state) && states[i].index == state)) {
+								return states[i].id;
+							}
+						}
+					}
+
+					return null;
+
 				};
 
 
