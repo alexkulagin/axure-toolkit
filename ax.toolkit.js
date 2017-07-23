@@ -56,9 +56,21 @@
 				AxureToolkit.prototype = 
 				{
 					/**
-					 * Добавляет новую функцию, которая будет вызываться из выражений Axure RP
-					 * @param {string} name - имя функции по которому она будет вызываться
-					 * @param {function} func - функция для выражения
+					 * Добавляет новую функцию, которая будет вызываться из объекта виджета
+					 * @param {string} name - имя по которому будет вызываться функция
+					 * @param {function} func - функция объекта
+					 */
+					
+					addExtension: function (name, func)
+					{
+						_private.public.fn[name] = func;
+					},
+
+
+					/**
+					 * Добавляет новую функцию, которая будет вызываться из выражения прототипа
+					 * @param {string} name - имя по которому будет вызываться функция
+					 * @param {function} func - функция выражения
 					 */
 					
 					addExpression: function (name, func)
