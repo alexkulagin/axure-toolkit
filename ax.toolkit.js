@@ -14,6 +14,34 @@
 	{
 		if (!window.$axure || !window.jQuery) return;
 
+		// TOOLKIT UTILS
+		
+		const _isArray = Array.isArray || function(obj)
+		{
+			return toString.call(obj) === '[object Array]';
+		};
+
+
+		const _isString = function (str)
+		{
+			return typeof str === 'string' || str instanceof String;
+		};
+
+
+		const _isFunction = function (func)
+		{
+			return typeof func == 'function' || false;
+		};
+
+
+		const _isNumber = function (n)
+		{
+			return !isNaN(parseFloat(n)) && isFinite(n);
+		};
+
+
+		// AXURE TOOLKIT
+		
 		!(function ()
 		{
 			'use strict';
@@ -372,6 +400,177 @@
 			//┘
 
 				new AxureToolkit();
+
+		})();
+
+
+		// DYNAMIC PANEL EXTENSION
+		
+		!(function ()
+		{
+			'use strict';
+
+			const _w = window,
+				  _a = _w.$axure,
+				  _$ = _w.jQuery,
+				  _private = _a.internal(function (ax) { return ax });
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PANEL EXTENSION                        │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				/**
+				 * Расширение для управления динамическими панелями
+				 * @param {object} widget - объект виджета
+				 * @param {object} el - скрытый элемент виджета
+				 * @param {string} id - идентификатор HTML представления
+				 */
+				
+				function PanelExtension (widget, el, id)
+				{
+					var _ = this.private;
+					
+					_.target = widget;
+					_.el = el;
+					_.id = id;
+					_.states = _getPanelStates(id);
+
+					this.options = {};
+				};
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PUBLIC PANEL METHODS                   │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				PanelExtension.prototype = 
+				{	
+					private: {},
+
+					
+					/**
+					 * Меняет состояние панели или возвращает объект текущего состояния
+					 * @param  {[number, string]} state — индекс состояния или лейбл
+					 * @param  {object} options — анимация перехода
+					 * @return {object} — возвращает объект текущего состояния
+					 */
+					
+					state: function (state, options)
+					{
+						var _p = this.private,
+							states = _p.states,
+							currentState,
+							nextState,
+							stateID;
+
+						if (!options) {
+							options = this.options;
+						}
+
+						// идентификатор текущего состояния
+						stateID = _private.visibility.GetPanelState(_p.id);
+
+						for (var index in states)
+						{
+							// текущее состояние
+							if (states[index].id == stateID) {
+								currentState = states[index];
+							}
+
+							// следующее состояние
+							if (state)
+							{
+								if (_isNumber(state) && state == states[index].index) {
+									nextState = states[index];
+								}
+
+								if (_isString(state) && state == states[index].label) {
+									nextState = states[index];
+								}
+							}
+						}
+
+						if (!currentState) return;
+
+						// возвращает текущее состояние динамической панели
+						if (!state)
+						{
+							return currentState;
+						}
+
+						// осуществляет переход к следующему состоянию
+						if (nextState && nextState.index != currentState.index) {
+							_p.target.SetPanelState(nextState.index, options);
+						}
+					}
+
+				};
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PRIVATE PANEL METHODS                  │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				/**
+				 * Находит все состояния динамической панели
+				 * @param  {string} id — идентификатор панели
+				 * @return {array} — возвращает список состояний
+				 */
+				
+				const _getPanelStates = function (id)
+				{
+					var $states = _$('#' + id).children();
+					var states = [];
+					
+					for (var i = 0; i < $states.length; i++)
+					{
+						states.push({
+							id: $states[i].id,
+							index: i + 1,
+							label: $states[i].dataset.label,
+							$state: $states[i]
+						});
+					}
+
+					return states;
+				};
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  EXTEND                                 │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				_w.$m.addExtension('getPanelController', function()
+				{
+					var widget = this,
+						single = widget.getElementIds().length == 1,
+						controller;
+
+					if (single)
+					{
+						this.each(function(el, id)
+						{
+							if (el.type == 'dynamicPanel') {
+								controller = new PanelExtension(widget, el, id)
+							}
+						});
+					} 
+
+					return controller || null;
+				});
+
 		})();
 	};
 
