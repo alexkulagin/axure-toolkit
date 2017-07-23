@@ -24,8 +24,6 @@
 				  _axSTO = _private.evaluateSTO,
 				  _listeners = [],
 				  _fn = {};
-				  
-			var _instance;
 
 
 
@@ -37,15 +35,14 @@
 
 				function AxureToolkit ()
 				{
-					if (!_instance) 
-					{
-						this.version = '1.0';
-						this.name = 'axure.toolkit';
+					this.version = '1.0';
+					this.name = 'axure.toolkit';
 
-						_w.$m = _instance = this;
+					_w.$a = _a.query;
+					_w.$d = {};
+					_w.$m = this;
 
-						_extend() && _initialize();
-					}
+					_extend() && _initialize();
 				};
 
 
@@ -59,7 +56,7 @@
 				AxureToolkit.prototype = 
 				{
 					/**
-					 * Добавляет новую функцию для вызова из выражений Axure RP
+					 * Добавляет новую функцию, которая будет вызываться из выражений Axure RP
 					 * @param {string} name - имя функции по которому она будет вызываться
 					 * @param {function} func - функция для выражения
 					 */
@@ -125,8 +122,9 @@
 
 				/**
 				 * Инициализация расширения
-				 * - находит и запускает сценарии
-				 * - оповещает о готовности виджеты
+				 * 
+				 * • находит и запускает сценарии
+				 * • оповещает о готовности виджеты
 				 */
 				
 				const _initialize = function ()
@@ -180,17 +178,21 @@
 				
 				const _run = function ()
 				{
-					var elementIds = this.getElementIds();
-
-					for (var i = 0; i < elementIds.length; i++)
+					this.each(function (element, elementId)
 					{
-						var script = _a('#' + elementIds[i]);
+						if (element.type === 'vectorShape')
+						{
+							var script = _a('#' + elementId).text();
 
-						try { _w.eval(script.text()) } 
-						catch (error) {
-							console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+							if (script !== '')
+							{
+								try { _w.eval(script) } 
+								catch (error) {
+									console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+								}
+							}
 						}
-					}
+					});
 
 					return this;
 				};
@@ -200,7 +202,7 @@
 				 * Переопределяет функцию _private.evaluateSTO для внедрения пользовательских функций в выражения
 				 * @param {object} sto - объект sto
 				 * @param {object} scope - область видимости
-				 * @param {object} eventInfo - соержимое вызывающего события
+				 * @param {object} eventInfo - содержимое вызывающего события
 				 */
 				
 				const _sto  = function (sto, scope, eventInfo)
@@ -407,8 +409,8 @@
 
 		/**
 		 * "DOMContentLoaded" и "onload" предоставляют возможность вызова функции до
-		 *  и после отработки события "OnPageLoad" ("OnPageLoad" — события из прототипа
-		 *  срабатывает сразу после загрузки страницы целиком)
+		 * и после отработки события "OnPageLoad" ("OnPageLoad" — событие из прототипа,
+		 * которое срабатывает сразу после загрузки страницы целиком)
 		 */
 		
 		_w.onload = _afterPageOnLoad;
