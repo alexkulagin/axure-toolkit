@@ -403,7 +403,7 @@
 							var l = _listeners[index].listener;
 
 							if (_isString(l)) {
-								_axure('@' + l).moveBy(0, 0, {});
+								_a('@' + l).moveBy(0, 0, {});
 							}
 
 							if (_isFunction(l)) {
@@ -415,7 +415,7 @@
 								for (var i = 0; i < l.length; i++)
 								{
 									if (_isString(l[i])) {
-										_axure('@' + l[i]).moveBy(0, 0, {});
+										_a('@' + l[i]).moveBy(0, 0, {});
 									}
 
 									if (_isFunction(l[i])) {
@@ -620,8 +620,8 @@
 					
 					getWidget: function (name, state)
 					{
-						var _p = this.private,
-							states = _p.states;
+						var _ = this.private,
+							states = _.states;
 
 						if (states.length == 0) return null;
 						
@@ -631,7 +631,7 @@
 							state = undefined;
 						}
 
-						return _findWidget(_p.target, name, state);
+						return _findWidget(_.target, name, state);
 					}
 
 				};
@@ -709,7 +709,7 @@
 						}
 					}
 
-					return null;
+					return undefined;
 
 				};
 
@@ -733,6 +733,792 @@
 						{
 							if (el.type == 'dynamicPanel') {
 								controller = new PanelExtension(widget, el, id)
+							}
+						});
+					} 
+
+					return controller || null;
+				});
+
+		})();
+
+
+
+
+		// REPEATER EXTENSION
+		
+		!(function ()
+		{
+			'use strict';
+
+			const _w = window,
+				  _a = _w.$axure,
+				  _$ = _w.jQuery,
+				  _private = _a.internal(function (ax) { return ax });
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  REPEATER EXTENSION                     │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				/**
+				 * Расширение для управления репитерами
+				 * @param {object} widget - объект виджета
+				 * @param {object} el - скрытый элемент виджета
+				 * @param {string} id - идентификатор HTML представления
+				 */
+				
+				function RepeaterExtension (widget, el, id)
+				{
+					var _ = this.private;
+					
+					_.target = widget;
+					_.el = el;
+					_.id = id;
+					
+					_.rows = _.el.data;
+
+					this.model = _private.deepCopy(_.rows);
+
+					// состояние фильтра
+					this.filtered = false;
+					this.filters = [];
+				};
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PUBLIC REPEATER METHODS                │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				RepeaterExtension.prototype = 
+				{	
+					private: {},
+
+					
+					/**
+					 * Обновляет представление репитера
+					 * После внесения каких-либо изменений в модель репитера, метод применяет изменения 
+					 * и инициирует обновление HTML представления.
+					 */
+					
+					render: function ()
+					{
+						var _ = this.private,
+							model = this.filtered ? _applyFilters(this.filters, this.model) : this.model;
+
+						_clearRepeaterData(_.id);
+						_addRepeaterData(_.id, model);
+						_refreshRepeater(_.id);
+					},
+
+					
+					/**
+					 * Удаляет все строки репитера
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 */
+					
+					clear: function ()
+					{
+						this.model = [];
+
+						return this;
+					},
+
+
+					/**
+					 * Восстанавливает первоначальные данные репитера
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 */
+					
+					recover: function ()
+					{
+						this.model = _private.deepCopy(this.private.rows);
+						return this;
+					},
+
+					
+					/**
+					 * Находит и возвращает строки по условию
+					 * @param {[object, number, array]} filter - условия для удаления
+					 * @param {boolean} exclude - режим исключения
+					 * @param {boolean} visible - возвращает только отображаемые строки
+					 * @return {array} - возвращает список найденых строк
+					 *
+					 * С пустым фильтром возвращает все строки
+					 */
+					
+					get: function (filter, exclude, visible)
+					{
+						var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
+							result = !filter ? model : _getRows(model, filter, exclude);
+						return result;
+					},
+
+					
+					/**
+					 * Находит и возвращает скопированные строки по условию
+					 * @param {[object, number, array]} filter - условия для удаления
+					 * @param {boolean} exclude - режим исключения
+					 * @param {boolean} visible - возвращает только отображаемые строки
+					 * @return {array} - возвращает список скопированных строк
+					 *
+					 * С пустым фильтром копирует и возвращает все строки
+					 */
+					
+					copy: function (filter, exclude, visible)
+					{
+						var result = this.get(filter, exclude, visible);
+						return _private.deepCopy(result);
+					},
+
+					
+					/**
+					 * Обновляет ячейки в строках по условию
+					 * @param {object} cells - объект с данными для обновления
+					 * @param {[object, number, array]} filter - условие
+					 * @param {boolean} exclude - режим исключения
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 *
+					 * filter:
+					 * - object - объект с условиями
+					 * - number - индекс строки
+					 * - array - список индексов
+					 */
+					
+					update: function (cells, filter, exclude)
+					{
+						var row, model, l, i = 0;
+
+						// наличие cells обязательное условие
+						if (!cells) return this;
+
+						// если фильтр не задан, то обновляет все строки
+						model = !filter ? this.model : _getRows(this.model, filter, exclude);
+
+						// нечего обновлять
+						if (model.length < 1) return this;
+						
+						l = model.length,
+						i = 0;
+
+						for (i; i < l; i++)
+						{
+							row = model[i];
+
+							for (var prop in cells)
+							{
+								if (row.hasOwnProperty(prop)) {
+									row[prop].text = cells[prop];
+								}
+							}
+						}
+
+						return this;
+					},
+
+
+					/**
+					 * Удаляет строки из репитера по условию
+					 * @param {[object, number, array]} filter - условия для удаления
+					 * @param {boolean} exclude - режим исключения
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 *
+					 * filter:
+					 * - object - объект с условиями
+					 * - number - индекс строки
+					 * - array - список индексов
+					 */
+					
+					remove: function (filter, exclude)
+					{
+						var exclude = exclude || false;
+						this.model = !filter ? this.model : _getRows(this.model, filter, !exclude);
+
+						return this;
+					},
+
+
+					/**
+					 * Применяет новый список строк
+					 * @param {array} model - список строк
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 */
+					
+					applyRows: function (model)
+					{
+						this.model = model;
+
+						return this;
+					},
+
+
+					/**
+					 * Вставляет строки после указанного индекса
+					 * @param {number} index - индекс строки
+					 * @param {array} model - добавляемые строки
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 */
+					
+					insertAfter: function (index, model)
+					{
+						var result = [],
+							list = this.model,
+							l = list.length;
+
+						if (!model || !_isArray(model) || model.length == 0) return this;
+
+						if (l == 0) {
+							this.model = model;
+							return this;
+						} 
+
+						index = index - 1;
+						index = (index < 0) ? 0 : index;
+						index = (index > l) ? l - 1 : index;
+
+						for (var i = 0; i < l; i++)
+						{
+							if (index == i)
+							{
+								result.push(list[i]);
+
+								for (var n = 0; n < model.length; n++)
+								{
+									result.push(model[n]);
+								}
+
+							} 
+
+							else result.push(list[i]);
+						}
+
+						this.model = result;
+
+						return this;
+					},
+
+
+					/**
+					 * Вставляет строки перед указанным индексом
+					 * @param {number} index - индекс строки
+					 * @param {array} model - добавляемые строки
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 */
+					
+					insertBefore: function (index, model)
+					{
+						var result = [],
+							list = this.model,
+							l = list.length;
+
+						if (!model || !_isArray(model) || model.length == 0) return this;
+
+						if (l == 0) {
+							this.model = model;
+							return this;
+						} 
+
+						index = index - 1;
+						index = (index < 0) ? 0 : index;
+						index = (index > l) ? l - 1 : index;
+
+						for (var i = 0; i < l; i++)
+						{
+							if (index == i)
+							{
+								for (var n = 0; n < model.length; n++)
+								{
+									result.push(model[n]);
+								}
+
+								result.push(list[i]);
+							} 
+
+							else result.push(list[i]);
+						}
+
+						this.model = result;
+
+						return this;
+					},
+
+					
+					/**
+					 * Добавляет строки в конец списка
+					 * @param {array} model - список строк
+					 * @return {object} - возвращает экземпляр репитера
+					 */
+					
+					append: function (model)
+					{
+						if (!model || !_isArray(model) || model.length == 0) return this;
+						this.model = this.model.concat(model);
+
+						return this;
+					},
+
+
+					/**
+					 * Добавляет список строк в начало
+					 * @param {array} model - список строк
+					 * @return {object} - возвращает экземпляр репитера
+					 */
+					
+					preppend: function (model)
+					{
+						if (!model || !_isArray(model) || model.length == 0) return this;
+						this.model = model.concat(this.model);
+
+						return this;
+					},
+
+
+					/**
+					 * Применяет новый фильтр
+					 * @param {object} filter - объект фильтра
+					 * @param {boolean} exclude - режим исключения (возвращает выборку или исключает ее из списка)
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 *
+					 * Чтобы фильтр начал действовать после добавления нужно вызвать метод render.
+					 * Можно применять несколько фильтров одновременно (фильтры накладываются во время отрисовки). 
+					 */
+					
+					applyFilter: function (filter, exclude)
+					{
+						if (!filter) return this;
+
+						this.filters.push({ filter: filter, exclude: exclude || false });
+
+						if (!this.filtered) {
+							this.filtered = true;
+						}
+
+						return this;
+					},
+
+
+					/**
+					 * Сбрасывает все фильтры
+					 * @return {object} - возвращает обратно экземпляр репитера
+					 */
+					
+					clearFilters: function ()
+					{
+						this.filters = [];
+						this.filtered = false;
+
+						return this;
+					},
+
+
+					/**
+					 * Возвращает признак наличия колонки в репитере
+					 * @param  {string} col - название колонки
+					 * @return {boolean} - возвращает true или false
+					 */
+					
+					hasColumn: function (col)
+					{
+						var columns = this._p.el.dataProps;
+
+						for (var i = 0; i < columns.length; i++)
+						{
+							if (columns[i] == col) {
+								return true;
+							}
+						}
+
+						return false;
+					},
+
+
+					/**
+					 * Возвращает массив значений из конкретной колонки
+					 * @param  {string} col - название колонки
+					 * @param {boolean} visible - возвращает только отображаемые строки
+					 * @return {array} - возвращает массив значений
+					 */
+					
+					getColumn: function (col, visible)
+					{
+						var columns = [],
+							model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
+							row;
+
+						for (var i = 0; i < model.length; i++)
+						{
+							row = model[i];
+							row.hasOwnProperty(col) && columns.push(row[col].text);
+						}
+
+						return columns;
+					},
+
+
+					/**
+					 * Суммирует числовые значения из колонок и возвращает результат
+					 * @param  {string} col - название колонки
+					 * @param {boolean} visible - суммирует только отображаемые строки
+					 * @return {number} - возвращает сумму значений
+					 */
+					
+					getSum: function (col, visible)
+					{
+						var columns = this.getColumn(col, visible),
+							sum = 0, value;
+
+						for (var i = 0; i < columns.length; i++)
+						{
+							value = columns[i];
+
+							if (_isNumber(value)) {
+								sum += Number(value);
+							}
+						}
+
+						return sum;
+					},
+
+
+					/**
+					 * Кол-во строк в репитере
+					 * @param {boolean} visible - учитывает только отображаемые строки
+					 * @return {number} - возвращает кол-во строк в репитере
+					 */
+					
+					getLength: function (visible)
+					{
+						var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model;
+						return model.length;
+					},
+
+					
+					/**
+					 * Возвращает найденный по имени виджет из конкретной строки репитера
+					 * @param {[string, array]} name - имя виджета или список имен
+					 * @param {[number, array]} rows - индекс или список индексов строк репитера
+					 * @return {object} - возвращает объект виджета
+					 */
+					
+					getWidget: function (name, rows)
+					{
+						var _ = this.private,
+							model = this.model;
+
+						if (model.length == 0) return null;
+
+						if (rows) {
+							rows = _getRepeaterRowsId(_.id, rows);
+						} else {
+							rows = undefined;
+						}
+
+						return _findWidget(this.private.target, name, rows);
+					}
+
+				};
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PRIVATE REPEATER METHODS               │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				/**
+				 * ..
+				 */
+				
+				const _getRepeaterRowsId = function (id, rows)
+				{
+					var children = _$('#' + id).children(),
+						list, index, i;
+
+					if (_isNumber(rows) && rows > 0 || rows <= children.length) {
+						return children[rows].id;
+					}
+
+					if (_isArray(rows) && rows.length > 0)
+					{
+						list = [];
+
+						for (i = 0; i < rows.length; i++)
+						{
+							index = rows[i];
+
+							if (_isNumber(index) && index > 0 || index <= children.length) {
+								list.push(children[index].id);
+							}
+						}
+
+						if (list.length > 0) return list;
+					}
+
+					return undefined;
+				};
+
+
+				/**
+				 * Фильтрует входящий список строк 
+				 * @param  {array} model - список строк
+				 * @param  {object} filter - фильтр
+				 * @param  {boolean} exclude - режим исключения
+				 * @return {array} - возвращает отфильтрованные строки
+				 */
+				
+				const _filter = function (model, filter, exclude)
+				{
+					if (!filter || !filter.condition) return [];
+
+					var condition = filter.condition,
+					
+						mode = filter.any || false,
+						exclude = exclude || false,
+
+						all, any, text, flag, cp,
+
+						result = _$.grep(model, function( n, i )
+						{
+							any = exclude ? true : false;
+							all = exclude ? false : true;
+
+							for (var prop in condition)
+							{
+								if (n.hasOwnProperty(prop)) 
+								{
+									flag = false;
+									text = n[prop].text;
+									cp = condition[prop];
+
+									// multi condition
+									if (_isArray(cp))
+									{
+										for (var c in cp)
+										{
+											if (text == cp[c]) {
+												flag = true;
+											}
+										}
+									} 
+
+									// single condition
+									else 
+									{
+										if (text == cp) {
+											flag = true;
+										}
+									}
+
+									if (flag) {
+										any = exclude ? false : true;
+									} else {
+										all = exclude ? true : false;
+									}
+								}
+							}
+
+							return !mode ? all : any;
+						});
+
+					return result;
+				};
+
+
+				/**
+				 * Применяет список фильтров
+				 * @param  {array} filters - список фильтров
+				 * @param  {array} model - список строк
+				 * @return {array} - возвращает отфильтрованный список
+				 */
+				
+				const _applyFilters = function (filters, model)
+				{
+					var f, i = 0;
+
+					for (i; i < filters.length; i++)
+					{
+						f = filters[i];
+						model = _filter(model, f.filter, f.exclude);
+					}
+
+					return model;
+				};
+
+
+				/**
+				 * Возвращает найденные с условием строки репитера
+				 * @param  {array} model - список строк
+				 * @param {[object, number, array]} filter - условия поиска
+				 * @param {boolean} exclude - режим исключения
+				 * @return {object} - возвращает отфильтрованные строки
+				 *
+				 * filter:
+				 * - object - объект с условиями
+				 * - number - индекс строки
+				 * - array - список индексов
+				 */
+				
+				const _getRows = function (model, filter, exclude)
+				{
+					var exclude = exclude || false,
+						result, f;
+
+					// если фильтр число
+					if (_isNumber(filter))
+					{		
+						result = [];
+
+						filter -= 1;
+
+						for (var index in model)
+						{
+							if ((exclude && index != filter) || (!exclude && index == filter))
+							{
+								result.push(model[index]);
+							}
+						}
+
+						return result;
+					}
+
+					// если фильтр массив чисел
+					if (_isArray(filter))
+					{
+						if (filter.length < 1) return [];
+
+						result = [];
+
+						for (var index in model)
+						{
+							f = false;
+
+							for (var i in filter)
+							{
+								if (index == filter[i] - 1)
+								{
+									f = true;
+								}
+							}
+
+							if ((exclude && !f) || (!exclude && f))
+							{
+								result.push(model[index]);
+							}
+						}
+
+						return result;
+					}
+
+					// если фильтр объект условий
+					return _filter(model, filter, exclude);
+				};
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PRIVATE AXURE REPEATER METHODS         │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				const _getRepeaterRows = _private.repeater.getAllItemIds;
+				const _refreshRepeater = _private.repeater.refreshRepeater;
+				const _addEditItems = _private.repeater.addEditItems;
+				const _deleteItems = _private.repeater.deleteItems;
+				const _addItem = _private.repeater.addItem;
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PRIVATE AXURE EX REPEATER METHODS      │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				const _getRepeater = function (repeaterId) 
+				{
+					var repeater;
+					
+					_a(function(obj) {
+						return obj.type == 'repeater';
+					}).each(function(obj, id) {
+						if (id == repeaterId) {
+							repeater = obj;
+						}
+					});
+
+					return repeater;
+				};
+
+				const _clearRepeaterData = function(repeaterId)
+				{
+					var ids = _getRepeaterRows(repeaterId);
+					_addEditItems(repeaterId, ids);
+					_deleteItems(repeaterId, {}, 'marked', undefined);
+				};
+
+
+				const _addRepeaterData = function(repeaterId, rows)
+				{
+					var event = {
+						targetElement: undefined,
+						srcElement: undefined
+					};
+
+					var repeater = _getRepeater(repeaterId);
+					var columns = repeater.dataProps;
+
+					for (var i = 0, il = rows.length; i < il; i++)
+					{
+						var source = rows[i];
+						var target = {};
+
+						for (var j = 0, jl = columns.length; j < jl; j++)
+						{
+							var column = columns[j];
+							var item = source[column];
+
+							if (item === undefined) {
+								item = {type: 'text', text: ''};
+							} 
+
+							else {
+								item = _private.deepCopy(item);
+							}
+
+							target[column] = item;
+						} 
+
+						_addItem(repeaterId, target, event);
+					}
+				};
+
+
+
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  EXTEND                                 │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				_w.$m.addExtension('getRepeaterController', function()
+				{
+					var widget = this,
+						single = widget.getElementIds().length == 1,
+						controller;
+
+					if (single)
+					{
+						this.each(function(el, id)
+						{
+							if (el.type == 'repeater') {
+								controller = new RepeaterExtension(widget, el, id)
 							}
 						});
 					} 
