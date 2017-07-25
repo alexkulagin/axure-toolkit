@@ -236,7 +236,13 @@
 					{
 						if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
 						_listeners.push({ channel: channel, listener: listener, once: once });
-					}
+					},
+
+					/**
+					 * Объект для хранения созданных экземпляров
+					 */
+					
+					instance: {}
 				};
 
 
@@ -727,14 +733,20 @@
 				{
 					var widget = this,
 						single = widget.getElementIds().length == 1,
+						instance = _w.$m.instance,
 						controller;
 
 					if (single)
 					{
 						this.each(function(el, id)
 						{
-							if (el.type == 'dynamicPanel') {
-								controller = new PanelExtension(widget, el, id)
+							if (el.type == 'dynamicPanel')
+							{
+								if (!instance[id]) {
+									controller = instance[id] = new PanelExtension(widget, el, id);
+								} else {
+									controller = instance[id];
+								}
 							}
 						});
 					} 
@@ -757,7 +769,6 @@
 				  _a = _w.$axure,
 				  _$ = _w.jQuery,
 				  _private = _a.internal(function (ax) { return ax });
-
 
 
 			//┐
@@ -1513,14 +1524,20 @@
 				{
 					var widget = this,
 						single = widget.getElementIds().length == 1,
+						instance = _w.$m.instance,
 						controller;
 
 					if (single)
 					{
 						this.each(function(el, id)
 						{
-							if (el.type == 'repeater') {
-								controller = new RepeaterExtension(widget, el, id)
+							if (el.type == 'repeater')
+							{
+								if (!instance[id]) {
+									controller = instance[id] = new RepeaterExtension(widget, el, id);
+								} else {
+									controller = instance[id];
+								}
 							}
 						});
 					} 
