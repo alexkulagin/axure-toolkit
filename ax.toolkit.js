@@ -148,6 +148,8 @@
 				  _a = _w.$axure,
 				  _private = _a.internal(function (ax) { return ax }),
 				  _axSTO = _private.evaluateSTO,
+				  _parent = _w.parent,
+				  _frames = _w.frames,
 				  _listeners = [],
 				  _fn = {};
 
@@ -407,7 +409,7 @@
 							}
 
 							if (_isFunction(l)) {
-								l.call(_window, channel, message);
+								l.call(_w, channel, message);
 							}
 
 							if (_isArray(l))
@@ -419,7 +421,7 @@
 									}
 
 									if (_isFunction(l[i])) {
-										l[i].call(_window, channel, message);
+										l[i].call(_w, channel, message);
 									}
 								}
 							}
@@ -430,9 +432,9 @@
 						}
 					}
 
-					if (_window.parent !== source)
+					if (_parent !== source)
 					{
-						_window.parent.postMessage(data, '*');
+						_parent.postMessage(data, '*');
 					}
 
 					if (_frames.length > 0) 
