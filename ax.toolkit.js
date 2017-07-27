@@ -140,6 +140,8 @@
 
 		// AXURE TOOLKIT
 		
+		var _init_ = undefined;
+
 		!(function ()
 		{
 			'use strict';
@@ -169,8 +171,11 @@
 					_w.$a = _a.query;
 					_w.$d = {};
 					_w.$m = this;
+					_w.addEventListener("message", _listener);
 
-					_extend() && _initialize();
+					_init_ = _initialize;
+
+					_extend();
 				};
 
 
@@ -276,8 +281,6 @@
 				const _initialize = function ()
 				{
 					var bundle = [], imports = [], init = [], i;
-
-					_w.addEventListener("message", _listener);
 
 					_a('*').each(function(element, elementId)
 					{
@@ -571,8 +574,8 @@
 					
 					state: function (state, options)
 					{
-						var _p = this.private,
-							states = _p.states,
+						var _ = this.private,
+							states = _.states,
 							currentState,
 							nextState,
 							stateID;
@@ -582,7 +585,7 @@
 						}
 
 						// идентификатор текущего состояния
-						stateID = _private.visibility.GetPanelState(_p.id);
+						stateID = _private.visibility.GetPanelState(_.id);
 
 						for (var index in states)
 						{
@@ -614,7 +617,7 @@
 
 						// осуществляет переход к следующему состоянию
 						if (nextState && nextState.index != currentState.index) {
-							_p.target.SetPanelState(nextState.index, options);
+							_.target.SetPanelState(nextState.index, options);
 						}
 					},
 
@@ -1137,7 +1140,7 @@
 					
 					hasColumn: function (col)
 					{
-						var columns = this._p.el.dataProps;
+						var columns = this.private.el.dataProps;
 
 						for (var i = 0; i < columns.length; i++)
 						{
@@ -1546,6 +1549,9 @@
 				});
 
 		})();
+
+
+		_init_ && _init_();
 	};
 
 
