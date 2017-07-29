@@ -1228,7 +1228,7 @@
 						if (model.length == 0) return null;
 
 						if (rows) {
-							rows = _getRepeaterRowsId(_.id, rows);
+							rows = _getRowsId(_.id, rows);
 						} else {
 							rows = undefined;
 						}
@@ -1247,10 +1247,13 @@
 			//┘
 
 				/**
-				 * ..
+				 * Возвращает идентификаторы строк репитера
+				 * @param {number} id - идентификатор HTML представления репитера
+				 * @param {[number, array]} rows - индекс или список индексов строк репитера
+				 * @return {array} - возвращает идентификатор или список идентификаторов
 				 */
 				
-				const _getRepeaterRowsId = function (id, rows)
+				const _getRowsId = function (id, rows)
 				{
 					var children = _$('#' + id).children(),
 						list, index, i;
