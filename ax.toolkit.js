@@ -549,8 +549,6 @@
 					_.el = el;
 					_.id = id;
 					_.states = _getPanelStates(id);
-
-					this.options = {};
 				};
 
 
@@ -563,6 +561,7 @@
 				PanelExtension.prototype = 
 				{	
 					private: {},
+					options: {},
 
 					
 					/**
