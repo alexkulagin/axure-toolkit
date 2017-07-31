@@ -285,9 +285,9 @@
 					_a('*').each(function(element, elementId)
 					{
 						if (element.label) {
-							element.label.match('ax.bundle.') && bundle.push(element);
-							element.label.match('ax.import.') && imports.push(element);
-							element.label.match('ax.init.') && init.push(element);
+							element.label.match('ax.bundle') && bundle.push(element);
+							element.label.match('ax.import') && imports.push(element);
+							element.label.match('ax.init') && init.push(element);
 						}
 					});
 
