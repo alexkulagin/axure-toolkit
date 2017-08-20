@@ -165,7 +165,7 @@
 
 				function AxureToolkit ()
 				{
-					this.version = '1.5';
+					this.version = '1.6';
 					this.name = 'axure.toolkit';
 
 					_w.$a = _a.query;
@@ -1633,11 +1633,14 @@
 		{
 			var _private = _w.$axure.internal(function (ax) { return ax });
 
+			
+			// поведение getGlobalVariable
 			_private.public.getGlobalVariable = _private.getGlobalVariable = function(name) {
 				return _private.globalVariableProvider.getVariableValue(name);
 			};
 
-			_private.public.fn.value = function()
+			// поведение value
+			_private.public.fn.value = function ()
 			{
 				if (arguments[0] == undefined)
 				{
@@ -1667,9 +1670,9 @@
 
 						if (_private.public.fn.IsCheckBox(widgetType) || _private.public.fn.IsRadioButton(widgetType))
 						{
-							if(arguments[0] == true) {
+							if (arguments[0] == true) {
 								elementIdQuery.attr('checked', true);
-							} else if(arguments[0] == false) {
+							} else if (arguments[0] == false) {
 								elementIdQuery.removeAttr('checked');
 							}
 						} else if (_private.public.fn.IsTextBox(widgetType)) {
@@ -1682,6 +1685,85 @@
 					}
 
 					return this;
+				}
+			};
+
+			// поведение text
+			_private.public.fn.text = function ()
+			{
+				if (arguments[0] == undefined) {
+					var firstId = this.getElementIds()[0];
+
+					if (!firstId) { return undefined; }
+
+					return getWidgetText(firstId);
+				} 
+
+				else {
+					var a = '' + arguments[0],
+						elementIds = this.getElementIds();
+
+					for(var index = 0; index < elementIds.length; index++) {
+						var currentItem = elementIds[index];
+
+						var widgetType = _private.getTypeFromElementId(currentItem);
+
+						if(_private.public.fn.IsTextBox(widgetType) || _private.public.fn.IsTextArea(widgetType)) { //For non rtf
+							SetWidgetFormText(currentItem, a);
+						} else {
+							var idRtf = '#' + currentItem;
+							if($(idRtf).length == 0) idRtf = '#u' + (Number(currentItem.substring(1)) + 1);
+
+							if($(idRtf).length != 0) {
+								//If the richtext div already has some text in it,
+								//preserve only the first style and get rid of the rest
+								//If no pre-existing p-span tags, don't do anything
+								if($(idRtf).find('p').find('span').length > 0) {
+									$(idRtf).find('p:not(:first)').remove();
+									$(idRtf).find('p').find('span:not(:first)').remove();
+
+									//Replace new-lines with NEWLINE token, then html encode the string,
+									//finally replace NEWLINE token with linebreak
+									var textWithLineBreaks = a.replace(/\n/g, '--NEWLINE--');
+									var textHtml = $('<div/>').text(textWithLineBreaks).html();
+									$(idRtf).find('span').html(textHtml.replace(/--NEWLINE--/g, '<br>'));
+								}
+							}
+						}
+					}
+
+					return this;
+				}
+			};
+
+			var getWidgetText = function(id)
+			{
+				var idQuery = $jobj(id);
+				var inputQuery = $jobj(_private.INPUT(id));
+				if (inputQuery.length) idQuery = inputQuery;
+
+				if (idQuery.is('input') && (_private.public.fn.IsCheckBox(idQuery.attr('type')) || idQuery.attr('type') == 'radio')) {
+					idQuery = idQuery.parent().find('label').find('div');
+				}
+
+				if (idQuery.is('div')) {
+					var $rtfObj = idQuery.hasClass('text') ? idQuery : idQuery.find('.text');
+					if ($rtfObj.length == 0) return undefined;
+
+					var textOut = '';
+					$rtfObj.children('p').each(function(index) {
+						if (index != 0) textOut += '\n';
+
+						//Replace line breaks (set in SetWidgetRichText) with newlines and nbsp's with regular spaces.
+						var htmlContent = $(this).html().replace(/<br[^>]*>/ig, '\n').replace(/&nbsp;/ig, ' ');
+						textOut += $(htmlContent).text();
+					});
+
+					return textOut;
+					
+				} else {
+					var val = idQuery.val();
+					return val == undefined ? '' : val;
 				}
 			};
 
