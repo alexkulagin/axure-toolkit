@@ -307,7 +307,7 @@
 						}
 					}
 
-					console.log('Axure extensions initialized and ready!');
+					console.log('Axure toolkit initialized and ready!');
 
 					_a('@ax.ready').moveBy(0, 0, {});
 
