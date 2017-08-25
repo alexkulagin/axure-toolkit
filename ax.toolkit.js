@@ -198,7 +198,7 @@
 				function AxureToolkit ()
 				{
 					this.version = '1.6';
-					this.name = 'axure.toolkit';
+					this.name = 'ax.toolkit';
 
 					_w.$a = _a.query;
 					_w.$d = {};
