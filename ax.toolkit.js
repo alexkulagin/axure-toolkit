@@ -136,6 +136,38 @@
 		};
 
 
+		/**
+		 * Форматирует байты в килобайты, мегабайты и т.д.
+		 * @param  {number} bytes - кол-во байт
+		 * @return {string} - возвращает отформатированное значение:
+		 * 
+		 * 1000 —			// 1 KB
+		 * 10000 —			// 10 KB
+		 * 100000 —			// 100 KB
+		 * 1000000 —		// 1 MB
+		 * 10000000 —		// 10 MB
+		 * 100000000 —		// 100 MB
+		 * 1000000000 —		// 1 GB
+		 * 10000000000 —	// 10 GB
+		 * 10000000000 —	// 10 GB
+		 * 100000000000 —	// 100 GB
+		 * 1000000000000 —	// 1 TB
+		 * 1500000000000 —	// 1.5 TB
+		 */
+		
+		const _formatBytes = function (bytes, decimals)
+		{
+			if (bytes == 0) return '0 Bytes';
+
+			var k = 1000,
+				dm = decimals || 2,
+				sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+				i = Math.floor(Math.log(bytes) / Math.log(k));
+
+			return '' + (parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]);
+		};
+
+
 
 
 		// AXURE TOOLKIT
