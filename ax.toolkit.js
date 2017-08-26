@@ -197,7 +197,7 @@
 
 				function AxureToolkit ()
 				{
-					this.version = '1.6';
+					this.version = '1.7';
 					this.name = 'ax.toolkit';
 
 					_w.$a = _a.query;
@@ -435,15 +435,18 @@
 						data = event.data,
 						channel = data.channel,
 						message = data.message,
-						index = 0;
+						index = 0,
+						item;
 
 					for (index; index < _listeners.length; index++)
 					{
-						if (!_listeners[index]) continue;
+						item = _listeners[index];
 
-						if (_isChannelMatch(_listeners[index].channel, channel))
+						if (!item) continue;
+
+						if (item.channel === '*' || _isChannelMatch(item.channel, channel))
 						{
-							var l = _listeners[index].listener;
+							var l = item.listener;
 
 							if (_isString(l)) {
 								_a('@' + l).moveBy(0, 0, {});
@@ -467,7 +470,7 @@
 								}
 							}
 
-							if (_listeners[index].once) {
+							if (item.once) {
 								delete _listeners[index];
 							}
 						}
