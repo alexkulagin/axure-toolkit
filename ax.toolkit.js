@@ -200,7 +200,7 @@
 					this.version = '1.7';
 					this.name = 'ax.toolkit';
 
-					_w.$a = _a.query;
+					_w.$a = _a;
 					_w.$d = {};
 					_w.$m = this;
 					_w.addEventListener("message", _listener);
