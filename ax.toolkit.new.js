@@ -40,6 +40,21 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
+			//╠──╢  AXURE TOOLKIT TODO           ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 *	• Добавить описание bug fixes
+				 */
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
 			//╠──╢  AXURE TOOLKIT                ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
@@ -57,11 +72,13 @@
 
 					_w.addEventListener('message', _broadcastHandler);
 
-					/*_applyFix();
+					
+					_applyFixes();
 					_applyExtends();
-					_applyExternals();*/
+					_applyExternals();
 
 					_initialize();
+
 
 					console.log('Axure Toolkit', 'v' + _v, 'initialized and ready!');
 				};
@@ -78,6 +95,8 @@
 			//┘	
 	
 				/**
+				 * Поддержка широковещательных сообщений в прототипе
+				 * 
 				 * Обработчик post message
 				 */
 				
@@ -193,6 +212,124 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
+			//╠──╢  TOOLKIT EXTENDS              ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Регистрация функций-расширений
+				 */
+				
+				const _applyExtends = function ()
+				{
+					_private.evaluateSTO = _sto;
+					_private.public.fn.run = _run;
+
+					return true;
+				};
+
+				
+				/**
+				 * Добавляет возможность выполнения сценария внутри 
+				 * виджета с типом "vectorShape"
+				 */
+				
+				const _run = function ()
+				{
+					this.each(function (element, elementId)
+					{
+						if (element.type === 'vectorShape')
+						{
+							var script = _a('#' + elementId).text();
+
+							if (script !== '')
+							{
+								try { _w.eval(script) } 
+								catch (error) {
+									console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+								}
+							}
+						}
+					});
+
+					return this;
+				};
+
+
+				/**
+				 * Переопределяет функцию _private.evaluateSTO для внедрения пользовательских функций в выражения
+				 * @param {object} sto - объект sto
+				 * @param {object} scope - область видимости
+				 * @param {object} eventInfo - содержимое вызывающего события
+				 */
+				
+				const _sto  = function (sto, scope, eventInfo)
+				{
+					if ((sto.sto !== 'fCall') || (sto.func !== 'trim') || (sto.arguments.length === 0)) {
+						return _evSTO.apply(null, arguments);
+					}
+
+					var thisObj = _evSTO(sto.thisSTO, scope, eventInfo);
+					
+					if (sto.thisSTO.computedType != 'string') {
+						thisObj = thisObj.toString();
+					}
+
+					var fn = _fn[thisObj.trim()];
+
+					if (!fn || typeof (fn) !== 'function')
+					{
+						console.error('Error:\nMethod "' + thisObj + '" not found!');
+					} 
+
+					else {
+						var args = [];
+
+						for (var i = 0; i < sto.arguments.length; i++) {
+							args.push(_evSTO(sto.arguments[i], scope, eventInfo));
+						}
+
+						if (false) return fn.apply({scope: scope, eventInfo: eventInfo}, args);
+						
+						try {
+							return fn.apply({scope: scope, eventInfo: eventInfo}, args);
+						} catch (error) {
+							console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+						}
+					}
+
+					return '';
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  TOOLKIT EXTERNALS            ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Внедрение внешних библиотек
+				 */
+				
+				const _applyExternals = function ()
+				{
+					//
+
+					return true;
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
 			//╠──╢  TOOLKIT UTILITIES            ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
@@ -227,26 +364,229 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
+			//╠──╢  AXURE 8 API FIXES            ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Исправляет баги Axure 8 API
+				 * 
+				 *	• getGlobalVariable
+				 *	• value
+				 */
+		
+				const _applyFixes = function ()
+				{
+					// поведение getGlobalVariable
+					_private.public.getGlobalVariable = _private.getGlobalVariable = function(name) {
+						return _private.globalVariableProvider.getVariableValue(name);
+					};
+
+					// поведение value
+					_private.public.fn.value = function ()
+					{
+						if (arguments[0] == undefined)
+						{
+							var firstId = this.getElementIds()[0];
+
+							if(!firstId) return undefined;
+
+							var widgetType = _private.getTypeFromElementId(firstId);
+
+							if (_private.public.fn.IsComboBox(widgetType) || _private.public.fn.IsListBox(widgetType)) {
+								return $('#' + firstId + ' :selected').text();
+							} else if (_private.public.fn.IsCheckBox(widgetType) || _private.public.fn.IsRadioButton(widgetType)) {
+								return $('#' + firstId + '_input').is(':checked');
+							} else if (_private.public.fn.IsTextBox(widgetType)) {
+								return $('#' + firstId + '_input').val();
+							} else {
+								return this.jQuery().first().val();
+							}
+						} else {
+							var elementIds = this.getElementIds();
+
+							for(var i = 0; i < elementIds.length; i++)
+							{
+								var widgetType = _private.getTypeFromElementId(elementIds[i]);
+
+								var elementIdQuery = $('#' + elementIds[i]);
+
+								if (_private.public.fn.IsCheckBox(widgetType) || _private.public.fn.IsRadioButton(widgetType))
+								{
+									if (arguments[0] == true) {
+										elementIdQuery.attr('checked', true);
+									} else if (arguments[0] == false) {
+										elementIdQuery.removeAttr('checked');
+									}
+								} else if (_private.public.fn.IsTextBox(widgetType)) {
+									
+									$('#' + elementIdQuery[0].id + '_input').val(arguments[0]);
+
+								} else {
+									elementIdQuery.val(arguments[0]);
+								}
+							}
+
+							return this;
+						}
+					};
+
+					// поведение text
+					_private.public.fn.text = function ()
+					{
+						if (arguments[0] == undefined) {
+							var firstId = this.getElementIds()[0];
+
+							if (!firstId) { return undefined; }
+
+							return getWidgetText(firstId);
+						} 
+
+						else {
+							var a = '' + arguments[0],
+								elementIds = this.getElementIds();
+
+							for(var index = 0; index < elementIds.length; index++) {
+								var currentItem = elementIds[index];
+
+								var widgetType = _private.getTypeFromElementId(currentItem);
+
+								if(_private.public.fn.IsTextBox(widgetType) || _private.public.fn.IsTextArea(widgetType)) { //For non rtf
+									SetWidgetFormText(currentItem, a);
+								} else {
+									var idRtf = '#' + currentItem;
+									if($(idRtf).length == 0) idRtf = '#u' + (Number(currentItem.substring(1)) + 1);
+
+									if($(idRtf).length != 0) {
+										//If the richtext div already has some text in it,
+										//preserve only the first style and get rid of the rest
+										//If no pre-existing p-span tags, don't do anything
+										if($(idRtf).find('p').find('span').length > 0) {
+											$(idRtf).find('p:not(:first)').remove();
+											$(idRtf).find('p').find('span:not(:first)').remove();
+
+											//Replace new-lines with NEWLINE token, then html encode the string,
+											//finally replace NEWLINE token with linebreak
+											var textWithLineBreaks = a.replace(/\n/g, '--NEWLINE--');
+											var textHtml = $('<div/>').text(textWithLineBreaks).html();
+											$(idRtf).find('span').html(textHtml.replace(/--NEWLINE--/g, '<br>'));
+										}
+									}
+								}
+							}
+
+							return this;
+						}
+					};
+
+					var getWidgetText = function(id)
+					{
+						var idQuery = $jobj(id);
+						var inputQuery = $jobj(_private.INPUT(id));
+						if (inputQuery.length) idQuery = inputQuery;
+
+						if (idQuery.is('input') && (_private.public.fn.IsCheckBox(idQuery.attr('type')) || idQuery.attr('type') == 'radio')) {
+							idQuery = idQuery.parent().find('label').find('div');
+						}
+
+						if (idQuery.is('div')) {
+							var $rtfObj = idQuery.hasClass('text') ? idQuery : idQuery.find('.text');
+							if ($rtfObj.length == 0) return undefined;
+
+							var textOut = '';
+							$rtfObj.children('p').each(function(index) {
+								if (index != 0) textOut += '\n';
+
+								//Replace line breaks (set in SetWidgetRichText) with newlines and nbsp's with regular spaces.
+								var htmlContent = $(this).html().replace(/<br[^>]*>/ig, '\n').replace(/&nbsp;/ig, ' ');
+								textOut += $(htmlContent).text();
+							});
+
+							return textOut;
+							
+						} else {
+							var val = idQuery.val();
+							return val == undefined ? '' : val;
+						}
+					};
+
+					return true;
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
 			//╠──╢  TOOLKIT INITIALIZATION       ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
 	
+				/**
+				 * Инициализация расширения
+				 * 
+				 *	• Находит специальные виджеты (ax.bundle и ax.import) 
+				 *	  и импортирует из них сценарии. После импорта удаляет 
+				 *	  все контейнеры из DOM.
+				 *	• Находит виджет ax.ready и прожигает в нем OnMove
+				 *	• Находит виджеты ax.init и прожигает в них OnMove
+				 */
+				
 				const _initialize = function ()
 				{
 					console.log('Axure Toolkit initialization...');
+
+					var bundle = [], imports = [], init = [], i;
+
+					_a('*').each(function(element, elementId)
+					{
+						if (element.label) {
+							element.label.match('ax.bundle') && bundle.push(element);
+							element.label.match('ax.import') && imports.push(element);
+							element.label.match('ax.init') && init.push(element);
+						}
+					});
+
+					if (imports.length > 0) 
+					{
+						for (i = 0; i < imports.length; i++)
+						{
+							_a('@' + imports[i].label).run().$().remove();
+						}
+					}
+
+					if (bundle.length > 0)
+					{
+						for (i = 0; i < bundle.length; i++)
+						{
+							_a('@' + bundle[i].label).$().remove();
+						}
+					}
+
+					_a('@ax.ready').moveBy(0, 0, {});
+
+					if (init.length > 0) 
+					{
+						for (i = 0; i < init.length; i++)
+						{
+							_a('@' + init[i].label).moveBy(0, 0, {});
+						}
+					}
 				};
 
 
 				const _beforeOnLoad = function ()
 				{
-					console.log('before OnPageLoad');
+					console.log('before OnPageLoad...');
 				};
 
 
 				const _afterOnLoad = function ()
 				{
-					console.log('after OnPageLoad!!!');
+					console.log('after OnPageLoad...');
 				};
 
 
