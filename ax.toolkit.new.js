@@ -89,6 +89,76 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
+			//╠──╢  TOOLKIT PUBLIC METHODS       ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				AxureToolkit.prototype = 
+				{
+					/**
+					 * Добавляет новую функцию, которая будет вызываться из объекта виджета
+					 * @param {string} name - имя по которому будет вызываться функция
+					 * @param {function} func - функция объекта
+					 */
+					
+					addExtension: function (name, func)
+					{
+						_private.public.fn[name] = func;
+					},
+
+
+					/**
+					 * Добавляет новую функцию, которая будет вызываться из выражения прототипа
+					 * @param {string} name - имя по которому будет вызываться функция
+					 * @param {function} func - функция выражения
+					 */
+					
+					addExpression: function (name, func)
+					{
+						_fn[name] = func;
+					},
+
+
+					/**
+					 * Отправляет сообщение
+					 * @param {string, array} channel - название канала или список каналов
+					 * @param {all} message - содержимое сообщения
+					 */
+					
+					send: function (channel, message)
+					{
+						if (!channel || (!_isString(channel) && !_isArray(channel))) return;
+						_w.postMessage({ channel: channel, message: message }, '*');
+					},
+
+
+					/**
+					 * Добавляет слушателя в рассылку
+					 * @param {string} channel - название канала
+					 * @param {function, string, array} listener - функция обратного вызова
+					 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
+					 *
+					 * listener value:
+					 * function - функция обратного вызова
+					 * string - вызывает OnMove в конкретном виджете (имя виджета)
+					 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
+					 */
+					
+					listen: function (channel, listener, once)
+					{
+						if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
+						_broadcastListeners.push({ channel: channel, listener: listener, once: once });
+					}
+
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
 			//╠──╢  TOOLKIT EVENT BROADCASTING   ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
@@ -267,10 +337,10 @@
 				const _sto  = function (sto, scope, eventInfo)
 				{
 					if ((sto.sto !== 'fCall') || (sto.func !== 'trim') || (sto.arguments.length === 0)) {
-						return _evSTO.apply(null, arguments);
+						return _axSTO.apply(null, arguments);
 					}
 
-					var thisObj = _evSTO(sto.thisSTO, scope, eventInfo);
+					var thisObj = _axSTO(sto.thisSTO, scope, eventInfo);
 					
 					if (sto.thisSTO.computedType != 'string') {
 						thisObj = thisObj.toString();
@@ -287,7 +357,7 @@
 						var args = [];
 
 						for (var i = 0; i < sto.arguments.length; i++) {
-							args.push(_evSTO(sto.arguments[i], scope, eventInfo));
+							args.push(_axSTO(sto.arguments[i], scope, eventInfo));
 						}
 
 						if (false) return fn.apply({scope: scope, eventInfo: eventInfo}, args);
@@ -581,12 +651,14 @@
 				const _beforeOnLoad = function ()
 				{
 					console.log('before OnPageLoad...');
+					_a('@ax.before').moveBy(0, 0, {});
 				};
 
 
 				const _afterOnLoad = function ()
 				{
 					console.log('after OnPageLoad...');
+					_a('@ax.after').moveBy(0, 0, {});
 				};
 
 
