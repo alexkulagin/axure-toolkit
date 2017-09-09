@@ -3,7 +3,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.1.0  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.1.1  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -25,7 +25,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.1.0';
+		  _v = '2.1.1';
 
 
 
@@ -68,12 +68,14 @@
 				const AxureToolkit = function ()
 				{
 					this.version = _v;
-					this.name = 'ax.toolkit';
+					this.extension = 'ax.toolkit';
 
 					_w.$a = _a.query;
 					_w.$u = _utils;
 					_w.$d = {};
 					_w.$m = this;
+					_w.$w = this.widget;
+					_w.$f = this.find;
 
 					_w.addEventListener('message', _broadcastHandler);
 
@@ -171,6 +173,18 @@
 					find: function (path)
 					{
 						return _findWidgets(path);
+					},
+
+
+					/**
+					 * Возвращает объект виджета по имени
+					 * @param  {[type]} name — название виджета
+					 * @return {object} объект виджета
+					 */
+					
+					widget: function (name)
+					{
+						return _a('@'+name);
 					}
 
 				};
