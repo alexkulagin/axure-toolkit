@@ -1,5 +1,23 @@
 
 
+/*
+ ╔═════════════════════════════════════════════════════════════════╗
+ ║       _                  ____            _       _              ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.1.0  ║
+ ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
+ ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
+ ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
+ ║      _                           _____    |_|    _ _    _ _     ║
+ ║     / \   __  ___   _ _ __ ___  |_   _|__   ___ | | | _(_) |_   ║
+ ║    / _ \  \ \/ / | | | '__/ _ \   | |/ _ \ / _ \| | |/ / | __|  ║
+ ║   / ___ \  >  <| |_| | | |  __/   | | (_) | (_) | |   <| | |_   ║
+ ║  /_/   \_\/_/\_\\__,_|_|  \___|   |_|\___/ \___/|_|_|\_\_|\__|  ║
+ ║                                                                 ║
+ ╚═════════════════════════════════════════════════════════════════╝
+*/
+
+
+
 
 !(function ()
 {
@@ -7,7 +25,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.0.0';
+		  _v = '2.1.0';
 
 
 
@@ -26,28 +44,15 @@
 
 
 			const _a = _w.$axure,
+				  _$ = _w.jQuery,
 				  _private = _a.internal(function (ax) { return ax }),
 				  _axSTO = _private.evaluateSTO,
 				  _parent = _w.parent,
 				  _frames = _w.frames,
-				  _listeners = [],
+				  _broadcastListeners = [],
 				  _fn = {},
+				  _instance = {},
 				  _utils = {};
-
-
-
-
-			//┐
-			//│  ╔═══════════════════════════════╗
-			//│  ║                               ║
-			//╠──╢  AXURE TOOLKIT TODO           ║
-			//│  ║                               ║
-			//│  ╚═══════════════════════════════╝
-			//┘	
-	
-				/**
-				 *	• Добавить описание bug fixes
-				 */
 
 
 
@@ -149,8 +154,143 @@
 					{
 						if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
 						_broadcastListeners.push({ channel: channel, listener: listener, once: once });
+					},
+
+
+					/**
+					 * Находит виджеты с учетом вложения
+					 * @param  {string} path — путь к виджету ('group_a/group_b/group_c/widgetName')
+					 * @return {object} — возвращает найденные виджеты
+					 *
+					 * Примеры:
+					 * $m.find('groupA/name') — виджеты name из группы groupA
+					 * $m.find('groupA/groupB/name') — виджеты name из вложенной группы groupA -> groupB
+					 * $m.find('groupA/panelName/stateName/name') — виджеты name из состояния stateName динамической панели
+					 */
+					
+					find: function (path)
+					{
+						return _findWidgets(path);
 					}
 
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  TOOLKIT EXTENDS              ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Регистрация функций-расширений
+				 */
+				
+				const _applyExtends = function ()
+				{
+					_private.evaluateSTO = _sto;
+					_private.public.fn.run = _run;
+
+					return true;
+				};
+
+				
+				/**
+				 * Добавляет возможность выполнения сценария внутри 
+				 * виджета с типом "vectorShape"
+				 */
+				
+				const _run = function ()
+				{
+					this.each(function (element, elementId)
+					{
+						if (element.type === 'vectorShape')
+						{
+							var script = _a('#' + elementId).text();
+
+							if (script !== '')
+							{
+								try { _w.eval(script) } 
+								catch (error) {
+									console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+								}
+							}
+						}
+					});
+
+					return this;
+				};
+
+
+				/**
+				 * Переопределяет функцию _private.evaluateSTO для внедрения пользовательских функций в выражения
+				 * @param {object} sto - объект sto
+				 * @param {object} scope - область видимости
+				 * @param {object} eventInfo - содержимое вызывающего события
+				 */
+				
+				const _sto  = function (sto, scope, eventInfo)
+				{
+					if ((sto.sto !== 'fCall') || (sto.func !== 'trim') || (sto.arguments.length === 0)) {
+						return _axSTO.apply(null, arguments);
+					}
+
+					var thisObj = _axSTO(sto.thisSTO, scope, eventInfo);
+					
+					if (sto.thisSTO.computedType != 'string') {
+						thisObj = thisObj.toString();
+					}
+
+					var fn = _fn[thisObj.trim()];
+
+					if (!fn || typeof (fn) !== 'function')
+					{
+						console.error('Error:\nMethod "' + thisObj + '" not found!');
+					} 
+
+					else {
+						var args = [];
+
+						for (var i = 0; i < sto.arguments.length; i++) {
+							args.push(_axSTO(sto.arguments[i], scope, eventInfo));
+						}
+
+						if (false) return fn.apply({scope: scope, eventInfo: eventInfo}, args);
+						
+						try {
+							return fn.apply({scope: scope, eventInfo: eventInfo}, args);
+						} catch (error) {
+							console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+						}
+					}
+
+					return '';
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  TOOLKIT EXTERNALS            ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Внедрение внешних библиотек
+				 */
+				
+				const _applyExternals = function ()
+				{
+					//
+
+					return true;
 				};
 
 
@@ -282,116 +422,159 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  TOOLKIT EXTENDS              ║
+			//╠──╢  FINDING                      ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
 	
 				/**
-				 * Регистрация функций-расширений
+				 * Находит виджеты в HTML представлении (dynamic panel or repeater)
+				 * @param {object} target - объект поиска
+				 * @param {[string, array]} name - название виджета или список названий
+				 * @param {[number, array]} childId - индекс или список индексов потомков (dynamic panel or repeater)
+				 * @return {array} - возвращает объект виджета или null
 				 */
 				
-				const _applyExtends = function ()
+				const _findInRows = function (target, name, childId)
 				{
-					_private.evaluateSTO = _sto;
-					_private.public.fn.run = _run;
+					if (!name)  return null;
 
-					return true;
-				};
+					var view = [],
+						list = [],
+						$object = target.$(),
+						query = _getFindInRowsQuery(name),
+						finded;
 
-				
-				/**
-				 * Добавляет возможность выполнения сценария внутри 
-				 * виджета с типом "vectorShape"
-				 */
-				
-				const _run = function ()
-				{
-					this.each(function (element, elementId)
+					const each = function (f, v) {
+						$.each(f, function( index, value ) {
+							v.push(value);
+						});
+					};
+
+
+					if (childId == undefined)
 					{
-						if (element.type === 'vectorShape')
-						{
-							var script = _a('#' + elementId).text();
-
-							if (script !== '')
-							{
-								try { _w.eval(script) } 
-								catch (error) {
-									console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
-								}
-							}
-						}
-					});
-
-					return this;
-				};
-
-
-				/**
-				 * Переопределяет функцию _private.evaluateSTO для внедрения пользовательских функций в выражения
-				 * @param {object} sto - объект sto
-				 * @param {object} scope - область видимости
-				 * @param {object} eventInfo - содержимое вызывающего события
-				 */
-				
-				const _sto  = function (sto, scope, eventInfo)
-				{
-					if ((sto.sto !== 'fCall') || (sto.func !== 'trim') || (sto.arguments.length === 0)) {
-						return _axSTO.apply(null, arguments);
-					}
-
-					var thisObj = _axSTO(sto.thisSTO, scope, eventInfo);
-					
-					if (sto.thisSTO.computedType != 'string') {
-						thisObj = thisObj.toString();
-					}
-
-					var fn = _fn[thisObj.trim()];
-
-					if (!fn || typeof (fn) !== 'function')
-					{
-						console.error('Error:\nMethod "' + thisObj + '" not found!');
+						finded = $object.find(query);
+						each(finded, view);
 					} 
 
-					else {
-						var args = [];
+					else 
+					{
+						if (_isArray(childId))
+						{
+							for (var i = 0; i < childId.length; i++)
+							{
+								finded = $('#' + childId[i]).find(query);
 
-						for (var i = 0; i < sto.arguments.length; i++) {
-							args.push(_axSTO(sto.arguments[i], scope, eventInfo));
+								each(finded, view);
+							}
 						}
 
-						if (false) return fn.apply({scope: scope, eventInfo: eventInfo}, args);
-						
-						try {
-							return fn.apply({scope: scope, eventInfo: eventInfo}, args);
-						} catch (error) {
-							console.error('Exception:\n' + error + '\n\nTrace:\n' + error.stack);
+						if (_isString(childId))
+						{
+							finded = $('#' + childId).find(query);
+
+							each(finded, view);
 						}
 					}
 
-					return '';
+					for (var v in view) {
+						list[v] = view[v].id;
+					}
+
+					if (list.length == 0) return null;
+
+					return $axure(function (element, elementId)
+					{
+						for (var n = 0; n < list.length; n++) {
+							if (list[n] == elementId) {
+								return true;
+							}
+						};
+
+						return false;
+					});
 				};
 
 
-
-
-			//┐
-			//│  ╔═══════════════════════════════╗
-			//│  ║                               ║
-			//╠──╢  TOOLKIT EXTERNALS            ║
-			//│  ║                               ║
-			//│  ╚═══════════════════════════════╝
-			//┘	
-	
 				/**
-				 * Внедрение внешних библиотек
+				 * Формирует запрос для функции _findInRows
+				 * @param  {[number, array]} name - имя виджета
+				 * @return {string} - возвращает подготовленный запрос
 				 */
 				
-				const _applyExternals = function ()
+				const _getFindInRowsQuery = function (name)
 				{
-					//
+					var query = '', i = 0, l;
 
-					return true;
+					if (_isArray(name) && name.length > 0)
+					{
+						l = name.length;
+
+						for (i; i < l; i++) {
+							query += '[data-label="' + name[i] + '"],'
+						}
+					} else {
+						query = '[data-label="' + name + '"]'
+					}
+
+					return query;
+				};
+
+
+				/**
+				 * Находит виджеты с учетом вложения
+				 * @param  {string} path — путь к виджету
+				 * @return {object} — возвращает найденные виджеты
+				 */
+				
+				const _findWidgets = function (path)
+				{
+					var query = _getFindWidgets(path),
+						list = [],
+						finded;
+
+					const each = function (f, v) {
+						$.each(f, function( index, value ) {
+							v.push(value.id);
+						});
+					};
+
+					finded = $(query);
+
+					each(finded, list);
+
+					return $axure(function (element, elementId)
+					{
+						for (var n = 0; n < list.length; n++) {
+							if (list[n] == elementId) {
+								return true;
+							}
+						};
+
+						return false;
+					});
+
+				};
+
+
+				/**
+				 * Формирует запрос для функции _findWidgets
+				 * @param  {string} path — путь к виджету
+				 * @return {string} — возвращает запрос для поиска
+				 */
+				
+				const _getFindWidgets = function (path)
+				{
+					var name = path.split('/'),
+						query = '';
+
+					for (var i = 0; i < name.length; i++)
+					{
+						query += '[data-label="' + name[i] + '"] ';
+					}
+
+					return query;
 				};
 
 
