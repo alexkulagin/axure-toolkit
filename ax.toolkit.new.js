@@ -1,9 +1,10 @@
 
 
+
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.1.1  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.2.1  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -25,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.1.1';
+		  _v = '2.2.1';
 
 
 
@@ -68,7 +69,7 @@
 				const AxureToolkit = function ()
 				{
 					this.version = _v;
-					this.extension = 'ax.toolkit';
+					this.name = 'ax.toolkit';
 
 					_w.$a = _a.query;
 					_w.$u = _utils;
@@ -177,7 +178,7 @@
 
 
 					/**
-					 * Возвращает объект виджета по имени
+					 * Возвращает объект виджета по названию
 					 * @param  {[type]} name — название виджета
 					 * @return {object} объект виджета
 					 */
@@ -185,6 +186,12 @@
 					widget: function (name)
 					{
 						return _a('@'+name);
+					},
+
+
+					panel: function (path)
+					{
+						return new PanelController(this.find(path));
 					}
 
 				};
@@ -442,19 +449,19 @@
 			//┘	
 	
 				/**
-				 * Находит виджеты в HTML представлении (dynamic panel or repeater)
+				 * Находит виджеты в представлении (dynamic panel or repeater) и возвращает идентификаторы
 				 * @param {object} target - объект поиска
 				 * @param {[string, array]} name - название виджета или список названий
 				 * @param {[number, array]} childId - индекс или список индексов потомков (dynamic panel or repeater)
-				 * @return {array} - возвращает объект виджета или null
+				 * @return {array} - возвращает список идентификаторов
 				 */
 				
-				const _findInRows = function (target, name, childId)
+				const _findIDinRows = function (target, name, childId)
 				{
 					if (!name)  return null;
 
 					var view = [],
-						list = [],
+						ids = [],
 						$object = target.$(),
 						query = _getFindInRowsQuery(name),
 						finded;
@@ -493,26 +500,15 @@
 					}
 
 					for (var v in view) {
-						list[v] = view[v].id;
+						ids[v] = view[v].id;
 					}
 
-					if (list.length == 0) return null;
-
-					return $axure(function (element, elementId)
-					{
-						for (var n = 0; n < list.length; n++) {
-							if (list[n] == elementId) {
-								return true;
-							}
-						};
-
-						return false;
-					});
+					return ids;
 				};
 
 
 				/**
-				 * Формирует запрос для функции _findInRows
+				 * Формирует запрос для функции _findIDinRows
 				 * @param  {[number, array]} name - имя виджета
 				 * @return {string} - возвращает подготовленный запрос
 				 */
@@ -544,7 +540,7 @@
 				
 				const _findWidgets = function (path)
 				{
-					var query = _getFindWidgets(path),
+					var query = _getFindWidgetsQuery(path),
 						list = [],
 						finded;
 
@@ -578,7 +574,7 @@
 				 * @return {string} — возвращает запрос для поиска
 				 */
 				
-				const _getFindWidgets = function (path)
+				const _getFindWidgetsQuery = function (path)
 				{
 					var name = path.split('/'),
 						query = '';
@@ -590,6 +586,306 @@
 
 					return query;
 				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  PANEL CONTROLLER             ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				const PanelController = function (widgets)
+				{
+					var list = this.list = [],
+						controller;
+
+					widgets.each(function(el, id)
+					{
+						if (el.type == 'dynamicPanel')
+						{
+							
+							if (!_instance[id]) {
+								controller = _instance[id] = new PanelExtension(el, id);
+							} else {
+								controller = _instance[id];
+							}
+
+							list.push(controller);
+						}
+					});
+
+					return (list.length != 0) ? this : null;
+				};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  PUBLIC PANEL CONTROLLER METHODS        │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					PanelController.prototype = 
+					{	
+						
+						/**
+						 * Меняет состояние панели или возвращает объект текущего состояния
+						 * @param  {[number, string]} state — индекс состояния или лейбл
+						 * @param  {object} options — анимация перехода
+						 * @return {object} — возвращает объект текущего состояния
+						 */
+						
+						state: function (state, options)
+						{
+							var list = this.list,
+								first,
+								controller;
+
+							if (state == undefined)
+							{
+								controller = list[0];
+								return (controller) ? controller.state() : null;
+							}
+
+							for (var i = 0; i < list.length; i++)
+							{
+								controller = list[i];
+								controller.state(state, options);
+							}
+						},
+
+
+						/**
+						 * Возвращает по названию виджеты из конкретных состояний динамической панели
+						 * @param {[string, array]} name - имя виджета или список имен
+						 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
+						 * @return {object} - возвращает объект виджета
+						 */
+						
+						find: function (name, state)
+						{
+							var list = this.list,
+								ids = [],
+								controller;
+
+							for (var i = 0; i < list.length; i++)
+							{
+								controller = list[i];
+								ids = ids.concat(controller.getWidgetIDs(name, state));
+							}
+
+							return $axure(function (element, elementId)
+							{
+								for (var i = 0; i < ids.length; i++) {
+									if (ids[i] == elementId) {
+										return true;
+									}
+								};
+
+								return false;
+							});
+						}
+					};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  PANEL EXTENSION                        │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					/**
+					 * Расширение для управления динамическими панелями
+					 * @param {object} widget - объект виджета
+					 * @param {object} el - скрытый элемент виджета
+					 * @param {string} id - идентификатор HTML представления
+					 */
+					
+					function PanelExtension (el, id)
+					{
+						var _ = {};
+						
+						_.target = _a('#' + id);
+						_.el = el;
+						_.id = id;
+						_.states = _getPanelStates(id);
+
+						this.private = _;
+						this.options = {};
+					};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  PUBLIC PANEL EXTENSION METHODS         │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					PanelExtension.prototype = 
+					{
+						/**
+						 * Меняет состояние панели или возвращает объект текущего состояния
+						 * @param  {[number, string]} state — индекс состояния или лейбл
+						 * @param  {object} options — анимация перехода
+						 * @return {object} — возвращает объект текущего состояния
+						 */
+						
+						state: function (state, options)
+						{
+							var _ = this.private,
+								states = _.states,
+								currentState,
+								nextState,
+								stateID;
+
+							if (!options) {
+								options = this.options;
+							}
+
+							// идентификатор текущего состояния
+							stateID = _private.visibility.GetPanelState(_.id);
+
+							for (var index in states)
+							{
+								// текущее состояние
+								if (states[index].id == stateID) {
+									currentState = states[index];
+								}
+
+								// следующее состояние
+								if (state)
+								{
+									if (_isNumber(state) && state == states[index].index) {
+										nextState = states[index];
+									}
+
+									if (_isString(state) && state == states[index].label) {
+										nextState = states[index];
+									}
+								}
+							}
+
+							if (!currentState) return;
+
+							// возвращает текущее состояние динамической панели
+							if (!state)
+							{
+								return currentState;
+							}
+
+							// осуществляет переход к следующему состоянию
+							if (nextState && nextState.index != currentState.index) {
+								_.target.SetPanelState(nextState.index, options);
+							}
+						},
+
+
+						/**
+						 * Возвращает идентификаторы виджетов из конкретных состояний динамической панели
+						 * @param {[string, array]} name - имя виджета или список имен
+						 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
+						 * @return {array} - возвращает список идентификаторов
+						 */
+						
+						getWidgetIDs: function (name, state)
+						{
+							var _ = this.private,
+								states = _.states;
+
+							if (states.length == 0) return null;
+							
+							if (state) {
+								state = _getPanelStateId(states, state);
+							} else {
+								state = undefined;
+							}
+
+							return _findIDinRows(_.target, name, state);
+						}
+					};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  PRIVATE PANEL EXTENSION METHODS        │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					/**
+					 * Находит все состояния динамической панели
+					 * @param  {string} id — идентификатор панели
+					 * @return {array} — возвращает список состояний
+					 */
+					
+					const _getPanelStates = function (id)
+					{
+						var $states = _$('#' + id).children();
+						var states = [];
+						
+						for (var i = 0; i < $states.length; i++)
+						{
+							states.push({
+								id: $states[i].id,
+								index: i + 1,
+								label: $states[i].dataset.label,
+								$state: $states[i]
+							});
+						}
+
+						return states;
+					};
+
+
+					/**
+					 * Возвращает список идентификаторов состояний панели
+					 * @param {array} states — список состояний
+					 * @param  {[string, number, array]} state — индекс/лейбл состояния
+					 * @return {array} — возвращает null или список идентификаторов
+					 */
+					
+					const _getPanelStateId = function (states, state)
+					{
+						var total = states.length, 
+							i, n, s, list;
+
+						if (_isArray(state)) 
+						{
+							list = [];
+
+							for (n = 0; n < state.length; n++)
+							{
+								s = state[n];
+
+								for (i = 0; i < total; i++)
+								{
+									if ((_isString(s) && states[i].label == s) || (_isNumber(s) && states[i].index == s)) {
+										list.push(states[i].id);
+									}
+								}
+							}
+
+							if (list.length > 0) return list;
+						}
+
+						else {
+							for (i = 0; i < total; i++)
+							{
+								if ((_isString(state) && states[i].label == state) || (_isNumber(state) && states[i].index == state)) {
+									return states[i].id;
+								}
+							}
+						}
+
+						return undefined;
+
+					};
 
 
 
