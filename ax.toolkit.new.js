@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.2.1  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.3.2  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.2.1';
+		  _v = '2.3.2';
 
 
 
@@ -93,116 +93,119 @@
 
 
 
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  AXURE TOOLKIT PUBLIC METHODS           │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					AxureToolkit.prototype = 
+					{
+						/**
+						 * Добавляет новую функцию, которая будет вызываться из объекта виджета
+						 * @param {string} name - имя по которому будет вызываться функция
+						 * @param {function} func - функция объекта
+						 */
+						
+						addExtension: function (name, func)
+						{
+							_private.public.fn[name] = func;
+						},
+
+
+						/**
+						 * Добавляет новую функцию, которая будет вызываться из выражения прототипа
+						 * @param {string} name - имя по которому будет вызываться функция
+						 * @param {function} func - функция выражения
+						 */
+						
+						addExpression: function (name, func)
+						{
+							_fn[name] = func;
+						},
+
+
+						/**
+						 * Отправляет сообщение
+						 * @param {string, array} channel - название канала или список каналов
+						 * @param {all} message - содержимое сообщения
+						 */
+						
+						send: function (channel, message)
+						{
+							if (!channel || (!_isString(channel) && !_isArray(channel))) return;
+							_w.postMessage({ channel: channel, message: message }, '*');
+						},
+
+
+						/**
+						 * Добавляет слушателя в рассылку
+						 * @param {string} channel - название канала
+						 * @param {function, string, array} listener - функция обратного вызова
+						 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
+						 *
+						 * listener value:
+						 * function - функция обратного вызова
+						 * string - вызывает OnMove в конкретном виджете (имя виджета)
+						 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
+						 */
+						
+						listen: function (channel, listener, once)
+						{
+							if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
+							_broadcastListeners.push({ channel: channel, listener: listener, once: once });
+						},
+
+
+						/**
+						 * Находит виджеты с учетом вложения
+						 * @param  {string} path — путь к виджету ('group_a/group_b/group_c/widgetName')
+						 * @return {object} — возвращает найденные виджеты
+						 *
+						 * Примеры:
+						 * $m.find('groupA/name') — виджеты name из группы groupA
+						 * $m.find('groupA/groupB/name') — виджеты name из вложенной группы groupA -> groupB
+						 * $m.find('groupA/panelName/stateName/name') — виджеты name из состояния stateName (Dynamic Panel)
+						 */
+						
+						find: function (path)
+						{
+							return _findWidgets(path);
+						},
+
+
+						/**
+						 * Возвращает объект виджета по названию
+						 * @param  {[type]} name — название виджета
+						 * @return {object} объект виджета
+						 */
+						
+						widget: function (name)
+						{
+							return _a('@'+name);
+						},
+
+
+						panel: function (path)
+						{
+							return new PanelController(this.find(path));
+						},
+
+
+						repeater: function (path)
+						{
+							return new RepeaterController(this.find(path));
+						}
+
+					};
+
+
+
 
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  TOOLKIT PUBLIC METHODS       ║
-			//│  ║                               ║
-			//│  ╚═══════════════════════════════╝
-			//┘	
-	
-				AxureToolkit.prototype = 
-				{
-					/**
-					 * Добавляет новую функцию, которая будет вызываться из объекта виджета
-					 * @param {string} name - имя по которому будет вызываться функция
-					 * @param {function} func - функция объекта
-					 */
-					
-					addExtension: function (name, func)
-					{
-						_private.public.fn[name] = func;
-					},
-
-
-					/**
-					 * Добавляет новую функцию, которая будет вызываться из выражения прототипа
-					 * @param {string} name - имя по которому будет вызываться функция
-					 * @param {function} func - функция выражения
-					 */
-					
-					addExpression: function (name, func)
-					{
-						_fn[name] = func;
-					},
-
-
-					/**
-					 * Отправляет сообщение
-					 * @param {string, array} channel - название канала или список каналов
-					 * @param {all} message - содержимое сообщения
-					 */
-					
-					send: function (channel, message)
-					{
-						if (!channel || (!_isString(channel) && !_isArray(channel))) return;
-						_w.postMessage({ channel: channel, message: message }, '*');
-					},
-
-
-					/**
-					 * Добавляет слушателя в рассылку
-					 * @param {string} channel - название канала
-					 * @param {function, string, array} listener - функция обратного вызова
-					 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
-					 *
-					 * listener value:
-					 * function - функция обратного вызова
-					 * string - вызывает OnMove в конкретном виджете (имя виджета)
-					 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
-					 */
-					
-					listen: function (channel, listener, once)
-					{
-						if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
-						_broadcastListeners.push({ channel: channel, listener: listener, once: once });
-					},
-
-
-					/**
-					 * Находит виджеты с учетом вложения
-					 * @param  {string} path — путь к виджету ('group_a/group_b/group_c/widgetName')
-					 * @return {object} — возвращает найденные виджеты
-					 *
-					 * Примеры:
-					 * $m.find('groupA/name') — виджеты name из группы groupA
-					 * $m.find('groupA/groupB/name') — виджеты name из вложенной группы groupA -> groupB
-					 * $m.find('groupA/panelName/stateName/name') — виджеты name из состояния stateName динамической панели
-					 */
-					
-					find: function (path)
-					{
-						return _findWidgets(path);
-					},
-
-
-					/**
-					 * Возвращает объект виджета по названию
-					 * @param  {[type]} name — название виджета
-					 * @return {object} объект виджета
-					 */
-					
-					widget: function (name)
-					{
-						return _a('@'+name);
-					},
-
-
-					panel: function (path)
-					{
-						return new PanelController(this.find(path));
-					}
-
-				};
-
-
-
-
-			//┐
-			//│  ╔═══════════════════════════════╗
-			//│  ║                               ║
-			//╠──╢  TOOLKIT EXTENDS              ║
+			//╠──╢  EXTENDS                      ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
@@ -298,7 +301,7 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  TOOLKIT EXTERNALS            ║
+			//╠──╢  EXTERNAL SCRIPTS             ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
@@ -320,7 +323,7 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  TOOLKIT EVENT BROADCASTING   ║
+			//╠──╢  BROADCASTING                 ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
@@ -593,6 +596,40 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
+			//╠──╢  UTILITIES                    ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				const _isArray = _utils.isArray = Array.isArray || function(obj)
+				{
+					return toString.call(obj) === '[object Array]';
+				};
+
+
+				const _isString = _utils.isString = function (str)
+				{
+					return typeof str === 'string' || str instanceof String;
+				};
+
+
+				const _isFunction = _utils.isFunction = function (func)
+				{
+					return typeof func == 'function' || false;
+				};
+
+
+				const _isNumber = _utils.isNumber = function (n)
+				{
+					return !isNaN(parseFloat(n)) && isFinite(n);
+				};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
 			//╠──╢  PANEL CONTROLLER             ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
@@ -625,7 +662,7 @@
 
 				//┐
 				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  PUBLIC PANEL CONTROLLER METHODS        │
+				//╠──┤  PANEL CONTROLLER PUBLIC METHODS        │
 				//│  └─────────────────────────────────────────┘
 				//┘
 
@@ -660,7 +697,7 @@
 
 
 						/**
-						 * Возвращает по названию виджеты из конкретных состояний динамической панели
+						 * Возвращает по названию виджеты из конкретных состояний Dynamic Panel
 						 * @param {[string, array]} name - имя виджета или список имен
 						 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
 						 * @return {object} - возвращает объект виджета
@@ -693,37 +730,40 @@
 
 
 
-				//┐
-				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  PANEL EXTENSION                        │
-				//│  └─────────────────────────────────────────┘
-				//┘
 
-					/**
-					 * Расширение для управления динамическими панелями
-					 * @param {object} widget - объект виджета
-					 * @param {object} el - скрытый элемент виджета
-					 * @param {string} id - идентификатор HTML представления
-					 */
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  PANEL EXTENSION              ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Расширение для управления Dynamic Panel
+				 * @param {object} widget - объект виджета
+				 * @param {object} el - скрытый элемент виджета
+				 * @param {string} id - идентификатор HTML представления
+				 */
+				
+				function PanelExtension (el, id)
+				{
+					var _ = {};
 					
-					function PanelExtension (el, id)
-					{
-						var _ = {};
-						
-						_.target = _a('#' + id);
-						_.el = el;
-						_.id = id;
-						_.states = _getPanelStates(id);
+					_.target = _a('#' + id);
+					_.el = el;
+					_.id = id;
+					_.states = _getPanelStates(id);
 
-						this.private = _;
-						this.options = {};
-					};
+					this.private = _;
+					this.options = {};
+				};
 
 
 
 				//┐
 				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  PUBLIC PANEL EXTENSION METHODS         │
+				//╠──┤  PANEL EXTENSION PUBLIC METHODS         │
 				//│  └─────────────────────────────────────────┘
 				//┘
 
@@ -773,7 +813,7 @@
 
 							if (!currentState) return;
 
-							// возвращает текущее состояние динамической панели
+							// возвращает текущее состояние Dynamic Panel
 							if (!state)
 							{
 								return currentState;
@@ -787,7 +827,7 @@
 
 
 						/**
-						 * Возвращает идентификаторы виджетов из конкретных состояний динамической панели
+						 * Возвращает идентификаторы виджетов из конкретных состояний Dynamic Panel
 						 * @param {[string, array]} name - имя виджета или список имен
 						 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
 						 * @return {array} - возвращает список идентификаторов
@@ -814,12 +854,12 @@
 
 				//┐
 				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  PRIVATE PANEL EXTENSION METHODS        │
+				//╠──┤  PANEL EXTENSION PRIVATE METHODS        │
 				//│  └─────────────────────────────────────────┘
 				//┘
 
 					/**
-					 * Находит все состояния динамической панели
+					 * Находит все состояния Dynamic Panel
 					 * @param  {string} id — идентификатор панели
 					 * @return {array} — возвращает список состояний
 					 */
@@ -893,33 +933,828 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  TOOLKIT UTILITIES            ║
+			//╠──╢  REPEATER CONTROLLER          ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
 	
-				const _isArray = _utils.isArray = Array.isArray || function(obj)
+				const RepeaterController = function (widget)
 				{
-					return toString.call(obj) === '[object Array]';
+					var single = widget.getElementIds().length == 1,
+						controller;
+
+					if (!single) return null;
+
+					widget.each(function(el, id)
+					{
+						if (el.type == 'repeater')
+						{
+							
+							if (!_instance[id]) {
+								controller = _instance[id] = new RepeaterExtension(el, id);
+							} else {
+								controller = _instance[id];
+							}
+						}
+					});
+
+					return controller || null;
 				};
 
 
-				const _isString = _utils.isString = function (str)
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  REPEATER EXTENSION           ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				/**
+				 * Расширение для управления Repeater
+				 * @param {object} widget - объект виджета
+				 * @param {object} el - скрытый элемент виджета
+				 * @param {string} id - идентификатор HTML представления
+				 */
+				
+				function RepeaterExtension (el, id)
 				{
-					return typeof str === 'string' || str instanceof String;
+					var _ = {};
+					
+					_.target = _a('#' + id);
+					_.el = el;
+					_.id = id;
+					_.states = _getPanelStates(id);
+
+					_.rows = _.el.data;
+
+					this.model = _private.deepCopy(_.rows);
+
+					// начальное состояние фильтра
+					this.filtered = false;
+					this.filters = [];
+
+					this.private = _;
+					this.options = {};
 				};
 
 
-				const _isFunction = _utils.isFunction = function (func)
-				{
-					return typeof func == 'function' || false;
-				};
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  REPEATER EXTENSION PUBLIC METHODS      │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					RepeaterExtension.prototype = 
+					{
+						
+						// ВОЗВРАЩАЮТ ЗНАЧЕНИЯ
+						// ────────────────────────────────────
+						
+						/**
+						 * Находит и возвращает строки по условию
+						 * @param {[object, number, array]} filter - условия для возврата
+						 * @param {boolean} exclude - режим исключения
+						 * @param {boolean} visible - возвращает только отображаемые строки
+						 * @return {array} - возвращает список найденых строк
+						 *
+						 * С пустым фильтром возвращает все строки
+						 */
+						
+						get: function (filter, exclude, visible)
+						{
+							var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
+								result = !filter ? model : _getRows(model, filter, exclude);
+							return result;
+						},
 
 
-				const _isNumber = _utils.isNumber = function (n)
-				{
-					return !isNaN(parseFloat(n)) && isFinite(n);
-				};
+						/**
+						 * Находит и возвращает скопированные строки по условию
+						 * @param {[object, number, array]} filter - условия для возврата
+						 * @param {boolean} exclude - режим исключения
+						 * @param {boolean} visible - возвращает только отображаемые строки
+						 * @return {array} - возвращает список скопированных строк
+						 *
+						 * С пустым фильтром копирует и возвращает все строки
+						 */
+						
+						copy: function (filter, exclude, visible)
+						{
+							var result = this.get(filter, exclude, visible);
+							return _private.deepCopy(result);
+						},
+
+
+						/**
+						 * Возвращает признак наличия колонки в Repeater
+						 * @param  {string} col - название колонки
+						 * @return {boolean} - возвращает true или false
+						 */
+						
+						hasColumn: function (col)
+						{
+							var columns = this.private.el.dataProps;
+
+							for (var i = 0; i < columns.length; i++)
+							{
+								if (columns[i] == col) {
+									return true;
+								}
+							}
+
+							return false;
+						},
+
+
+						/**
+						 * Возвращает массив значений из конкретной колонки
+						 * @param  {string} col - название колонки
+						 * @param {boolean} visible - возвращает только отображаемые строки
+						 * @return {array} - возвращает массив значений
+						 */
+						
+						getColumn: function (col, visible)
+						{
+							var columns = [],
+								model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
+								row;
+
+							for (var i = 0; i < model.length; i++)
+							{
+								row = model[i];
+								row.hasOwnProperty(col) && columns.push(row[col].text);
+							}
+
+							return columns;
+						},
+
+
+						/**
+						 * Суммирует числовые значения из колонок и возвращает результат
+						 * @param  {string} col - название колонки
+						 * @param {boolean} visible - суммирует только отображаемые строки
+						 * @return {number} - возвращает сумму значений
+						 */
+						
+						getSum: function (col, visible)
+						{
+							var columns = this.getColumn(col, visible),
+								sum = 0, value;
+
+							for (var i = 0; i < columns.length; i++)
+							{
+								value = columns[i];
+
+								if (_isNumber(value)) {
+									sum += Number(value);
+								}
+							}
+
+							return sum;
+						},
+
+
+						/**
+						 * Кол-во строк в Repeater
+						 * @param {boolean} visible - учитывает только отображаемые строки
+						 * @return {number} - возвращает кол-во строк в Repeater
+						 */
+						
+						getLength: function (visible)
+						{
+							var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model;
+							return model.length;
+						},
+
+
+						/**
+						 * Возвращает найденные по названию виджеты из конкретных строк Repeater
+						 * @param {[string, array]} name - имя виджета или список имен
+						 * @param {[number, array]} rows - индекс или список индексов строк Repeater
+						 * @return {object} - возвращает объект виджета
+						 */
+						
+						find: function (name, rows)
+						{
+							var _ = this.private,
+								model = this.model,
+								ids;
+
+							if (model.length == 0) return null;
+
+							if (rows) {
+								rows = _getRowsId(_.id, rows);
+							} else {
+								rows = undefined;
+							}
+
+							ids = _findIDinRows(_.target, name, rows);
+
+							return $axure(function (element, elementId)
+							{
+								for (var i = 0; i < ids.length; i++) {
+									if (ids[i] == elementId) {
+										return true;
+									}
+								};
+
+								return false;
+							});
+						},
+
+
+
+						// ДОБАВЛЯЮТ СТРОКИ
+						// ────────────────────────────────────
+						
+						/**
+						 * Вставляет строки после указанного индекса
+						 * @param {number} index - индекс строки
+						 * @param {array} model - добавляемые строки
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 */
+						
+						insertAfter: function (index, model)
+						{
+							var result = [],
+								list = this.model,
+								l = list.length;
+
+							if (!model || !_isArray(model) || model.length == 0) return this;
+
+							if (l == 0) {
+								this.model = model;
+								return this;
+							} 
+
+							index = index - 1;
+							index = (index < 0) ? 0 : index;
+							index = (index > l) ? l - 1 : index;
+
+							for (var i = 0; i < l; i++)
+							{
+								if (index == i)
+								{
+									result.push(list[i]);
+
+									for (var n = 0; n < model.length; n++)
+									{
+										result.push(model[n]);
+									}
+
+								} 
+
+								else result.push(list[i]);
+							}
+
+							this.model = result;
+
+							return this;
+						},
+
+
+						/**
+						 * Вставляет строки перед указанным индексом
+						 * @param {number} index - индекс строки
+						 * @param {array} model - добавляемые строки
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 */
+						
+						insertBefore: function (index, model)
+						{
+							var result = [],
+								list = this.model,
+								l = list.length;
+
+							if (!model || !_isArray(model) || model.length == 0) return this;
+
+							if (l == 0) {
+								this.model = model;
+								return this;
+							} 
+
+							index = index - 1;
+							index = (index < 0) ? 0 : index;
+							index = (index > l) ? l - 1 : index;
+
+							for (var i = 0; i < l; i++)
+							{
+								if (index == i)
+								{
+									for (var n = 0; n < model.length; n++)
+									{
+										result.push(model[n]);
+									}
+
+									result.push(list[i]);
+								} 
+
+								else result.push(list[i]);
+							}
+
+							this.model = result;
+
+							return this;
+						},
+
+
+						/**
+						 * Добавляет строки в конец списка
+						 * @param {array} model - список строк
+						 * @return {object} - возвращает экземпляр Repeater
+						 */
+						
+						append: function (model)
+						{
+							if (!model || !_isArray(model) || model.length == 0) return this;
+							this.model = this.model.concat(model);
+
+							return this;
+						},
+
+						
+						/**
+						 * Добавляет список строк в начало
+						 * @param {array} model - список строк
+						 * @return {object} - возвращает экземпляр Repeater
+						 */
+						
+						preppend: function (model)
+						{
+							if (!model || !_isArray(model) || model.length == 0) return this;
+							this.model = model.concat(this.model);
+
+							return this;
+						},
+
+						
+
+						// МОДИФИЦИРУЮТ СТРОКИ
+						// ────────────────────────────────────
+						
+						/**
+						 * Обновляет ячейки в строках по условию
+						 * @param {object} cells - объект с данными для обновления
+						 * @param {[object, number, array]} filter - условие
+						 * @param {boolean} exclude - режим исключения
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 *
+						 * filter:
+						 * - object - объект с условиями
+						 * - number - индекс строки
+						 * - array - список индексов
+						 */
+						
+						update: function (cells, filter, exclude)
+						{
+							var row, model, l, i = 0;
+
+							// наличие cells обязательное условие
+							if (!cells) return this;
+
+							// если фильтр не задан, то обновляет все строки
+							model = !filter ? this.model : _getRows(this.model, filter, exclude);
+
+							// нечего обновлять
+							if (model.length < 1) return this;
+							
+							l = model.length,
+							i = 0;
+
+							for (i; i < l; i++)
+							{
+								row = model[i];
+
+								for (var prop in cells)
+								{
+									if (row.hasOwnProperty(prop)) {
+										row[prop].text = cells[prop];
+									}
+								}
+							}
+
+							return this;
+						},
+
+
+						/**
+						 * Восстанавливает первоначальные данные Repeater
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 */
+						
+						recover: function ()
+						{
+							this.model = _private.deepCopy(this.private.rows);
+							return this;
+						},
+
+
+						/**
+						 * Применяет новый список строк
+						 * @param {array} model - список строк
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 */
+						
+						applyRows: function (model)
+						{
+							this.model = model;
+							return this;
+						},
+
+
+
+						// УДАЛЯЮТ СТРОКИ
+						// ────────────────────────────────────
+
+						/**
+						 * Удаляет все строки Repeater
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 */
+						
+						clear: function ()
+						{
+							this.model = [];
+							return this;
+						},
+
+
+						/**
+						 * Удаляет строки из Repeater по условию
+						 * @param {[object, number, array]} filter - условия для удаления
+						 * @param {boolean} exclude - режим исключения
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 *
+						 * filter:
+						 * - object - объект с условиями
+						 * - number - индекс строки
+						 * - array - список индексов
+						 */
+						
+						remove: function (filter, exclude)
+						{
+							var exclude = exclude || false;
+							this.model = !filter ? this.model : _getRows(this.model, filter, !exclude);
+
+							return this;
+						},
+
+
+
+						// ФИЛЬТРУЮТ СТРОКИ
+						// ────────────────────────────────────
+
+						/**
+						 * Применяет новый фильтр
+						 * @param {object} filter - объект фильтра
+						 * @param {boolean} exclude - режим исключения (возвращает выборку или исключает ее из списка)
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 *
+						 * Чтобы фильтр начал действовать после добавления нужно вызвать метод render.
+						 * Можно применять несколько фильтров одновременно (фильтры накладываются во время отрисовки). 
+						 */
+						
+						applyFilter: function (filter, exclude)
+						{
+							if (!filter) return this;
+
+							this.filters.push({ filter: filter, exclude: exclude || false });
+
+							if (!this.filtered) {
+								this.filtered = true;
+							}
+
+							return this;
+						},
+
+
+						/**
+						 * Сбрасывает все фильтры
+						 * @return {object} - возвращает обратно экземпляр Repeater
+						 */
+						
+						clearFilters: function ()
+						{
+							this.filters = [];
+							this.filtered = false;
+
+							return this;
+						},
+
+
+
+						// РЕНДЕР
+						// ────────────────────────────────────
+
+						/**
+						 * Обновляет представление Repeater
+						 * После внесения каких-либо изменений в модель Repeater, метод применяет изменения 
+						 * и инициирует обновление HTML представления.
+						 */
+						
+						render: function ()
+						{
+							var id = this.private.id,
+								model = this.filtered ? _applyFilters(this.filters, this.model) : this.model;
+
+							_clearRepeaterData(id);
+							_addRepeaterData(id, model);
+							_refreshRepeater(id);
+						}
+
+					};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  REPEATER EXTENSION PRIVATE METHODS     │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					/**
+					 * Возвращает идентификаторы строк Repeater
+					 * @param {number} id - идентификатор HTML представления Repeater
+					 * @param {[number, array]} rows - индекс или список индексов строк Repeater
+					 * @return {array} - возвращает идентификатор или список идентификаторов
+					 */
+					
+					const _getRowsId = function (id, rows)
+					{
+						var children = _$('#' + id).children(),
+							list, index, i;
+
+						if (_isNumber(rows) && rows > 0 || rows <= children.length) {
+							return children[rows].id;
+						}
+
+						if (_isArray(rows) && rows.length > 0)
+						{
+							list = [];
+
+							for (i = 0; i < rows.length; i++)
+							{
+								index = rows[i];
+
+								if (_isNumber(index) && index > 0 || index <= children.length) {
+									list.push(children[index].id);
+								}
+							}
+
+							if (list.length > 0) return list;
+						}
+
+						return undefined;
+					};
+
+
+					/**
+					 * Фильтрует входящий список строк 
+					 * @param  {array} model - список строк
+					 * @param  {object} filter - фильтр
+					 * @param  {boolean} exclude - режим исключения
+					 * @return {array} - возвращает отфильтрованные строки
+					 */
+					
+					const _filter = function (model, filter, exclude)
+					{
+						if (!filter || !filter.condition) return [];
+
+						var condition = filter.condition,
+						
+							mode = filter.any || false,
+							exclude = exclude || false,
+
+							all, any, text, flag, cp,
+
+							result = _$.grep(model, function( n, i )
+							{
+								any = exclude ? true : false;
+								all = exclude ? false : true;
+
+								for (var prop in condition)
+								{
+									if (n.hasOwnProperty(prop)) 
+									{
+										flag = false;
+										text = n[prop].text;
+										cp = condition[prop];
+
+										// multi condition
+										if (_isArray(cp))
+										{
+											for (var c in cp)
+											{
+												if (text == cp[c]) {
+													flag = true;
+												}
+											}
+										} 
+
+										// single condition
+										else 
+										{
+											if (text == cp) {
+												flag = true;
+											}
+										}
+
+										if (flag) {
+											any = exclude ? false : true;
+										} else {
+											all = exclude ? true : false;
+										}
+									}
+								}
+
+								return !mode ? all : any;
+							});
+
+						return result;
+					};
+
+
+					/**
+					 * Применяет список фильтров
+					 * @param  {array} filters - список фильтров
+					 * @param  {array} model - список строк
+					 * @return {array} - возвращает отфильтрованный список
+					 */
+					
+					const _applyFilters = function (filters, model)
+					{
+						var f, i = 0;
+
+						for (i; i < filters.length; i++)
+						{
+							f = filters[i];
+							model = _filter(model, f.filter, f.exclude);
+						}
+
+						return model;
+					};
+
+
+					/**
+					 * Возвращает найденные с условием строки Repeater
+					 * @param  {array} model - список строк
+					 * @param {[object, number, array]} filter - условия поиска
+					 * @param {boolean} exclude - режим исключения
+					 * @return {object} - возвращает отфильтрованные строки
+					 *
+					 * filter:
+					 * - object - объект с условиями
+					 * - number - индекс строки
+					 * - array - список индексов
+					 */
+					
+					const _getRows = function (model, filter, exclude)
+					{
+						var exclude = exclude || false,
+							result, f;
+
+						// если фильтр число
+						if (_isNumber(filter))
+						{		
+							result = [];
+
+							filter -= 1;
+
+							for (var index in model)
+							{
+								if ((exclude && index != filter) || (!exclude && index == filter))
+								{
+									result.push(model[index]);
+								}
+							}
+
+							return result;
+						}
+
+						// если фильтр массив чисел
+						if (_isArray(filter))
+						{
+							if (filter.length < 1) return [];
+
+							result = [];
+
+							for (var index in model)
+							{
+								f = false;
+
+								for (var i in filter)
+								{
+									if (index == filter[i] - 1)
+									{
+										f = true;
+									}
+								}
+
+								if ((exclude && !f) || (!exclude && f))
+								{
+									result.push(model[index]);
+								}
+							}
+
+							return result;
+						}
+
+						// если фильтр объект условий
+						return _filter(model, filter, exclude);
+					};
+
+
+
+
+			//┐
+			//│  ╔═══════════════════════════════╗
+			//│  ║                               ║
+			//╠──╢  REPEATER DEPENDENCIES        ║
+			//│  ║                               ║
+			//│  ╚═══════════════════════════════╝
+			//┘	
+	
+				
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  AXURE API METHODS                      │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					const _getRepeaterRows = _private.repeater.getAllItemIds;
+					const _refreshRepeater = _private.repeater.refreshRepeater;
+					const _addEditItems = _private.repeater.addEditItems;
+					const _deleteItems = _private.repeater.deleteItems;
+					const _addItem = _private.repeater.addItem;
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  REPEATER EXTENSION PRIVATE METHODS     │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					const _getRepeater = function (repeaterId) 
+					{
+						var repeater;
+						
+						_a(function(obj) {
+							return obj.type == 'repeater';
+						}).each(function(obj, id) {
+							if (id == repeaterId) {
+								repeater = obj;
+							}
+						});
+
+						return repeater;
+					};
+
+					const _clearRepeaterData = function(repeaterId)
+					{
+						var ids = _getRepeaterRows(repeaterId);
+						_addEditItems(repeaterId, ids);
+						_deleteItems(repeaterId, {}, 'marked', undefined);
+					};
+
+
+					const _addRepeaterData = function(repeaterId, rows)
+					{
+						var event = {
+							targetElement: undefined,
+							srcElement: undefined
+						};
+
+						var repeater = _getRepeater(repeaterId);
+						var columns = repeater.dataProps;
+
+						for (var i = 0, il = rows.length; i < il; i++)
+						{
+							var source = rows[i];
+							var target = {};
+
+							for (var j = 0, jl = columns.length; j < jl; j++)
+							{
+								var column = columns[j];
+								var item = source[column];
+
+								if (item === undefined) {
+									item = {type: 'text', text: ''};
+								} 
+
+								else {
+									item = _private.deepCopy(item);
+								}
+
+								target[column] = item;
+							} 
+
+							_addItem(repeaterId, target, event);
+						}
+					};
 
 
 
@@ -1187,7 +2022,7 @@
 	//┐
 	//│  ╔═══════════════════════════════╗
 	//│  ║                               ║
-	//╠──╢  ACTIVATOR                    ║
+	//╠──╢  JS TOOLKIT ACTIVATOR         ║
 	//│  ║                               ║
 	//│  ╚═══════════════════════════════╝
 	//┘	
