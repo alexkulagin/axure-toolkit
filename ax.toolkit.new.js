@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.3.2  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.4.2  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.3.2';
+		  _v = '2.4.2';
 
 
 
@@ -622,6 +622,45 @@
 				const _isNumber = _utils.isNumber = function (n)
 				{
 					return !isNaN(parseFloat(n)) && isFinite(n);
+				};
+
+
+				/**
+				 * Возвращает склонение числа 
+				 * @param  {number} n — число
+				 * @param  {array} t — список вариантов
+				 * @return {*} — возвращает элемент списка t
+				 *
+				 * _pluralTranslate(1,['копия', 'копии', 'копий']);		// копия
+				 * _pluralTranslate(2,['копия', 'копии', 'копий']);		// копии
+				 * _pluralTranslate(30,['копия', 'копии', 'копий']);	// копий
+				 */
+
+				const _pluralTranslate = function (n, t, lng)
+				{
+					// http://docs.translatehouse.org/projects/localization-guide/en/latest/l10n/pluralforms.html?id=l10n/pluralforms
+					if (lng == 'ru') return t[(n%10==1 && n%100!=11) ? 0 : (n%10>=2 && n%10<=4) && (n%100<10 || n%100>=20) ? 1 : 2];
+					if (lng == 'en') return t[(n != 1) ? 0 : 1];
+				};
+
+
+				/**
+				 * Возвращает функцию _pluralTranslate с подготовленными вариантами
+				 * @param  {array} t — список вариантов
+				 * @return {function} — подготовленная функция _pluralTranslate
+				 *
+				 *	var func = _pluralRU(['копия', 'копии', 'копий']);
+				 *		func(1);	// копия
+				 *		func(2);	// копии
+				 *		func(30);	// копий
+				 *		func(2001);	// копия
+				 */
+
+				const _pluralRU = _utils.pluralRU = function (t)
+				{
+					return function(n) {
+						return _pluralTranslate(n, t, 'ru');
+					};
 				};
 
 
