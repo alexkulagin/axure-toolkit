@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.4.2  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.5.2  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.4.2';
+		  _v = '2.5.2';
 
 
 
@@ -662,6 +662,50 @@
 						return _pluralTranslate(n, t, 'ru');
 					};
 				};
+
+
+				/**
+				 * Возвращает функцию для форматирования размера файла
+				 * @param  {string} zero — значение для 0 (по умолчанию 0 Bytes)
+				 * @param  {array} val — список единиц измерения
+				 * @param  {int} pow — единица по умолчанию (от 1 до 8) 1 = KB, 2 = MB, 3 = GB и т.д.
+				 * @param  {number} dec — остаток
+				 * @return {function} — функция для форматирования
+				 *
+				 *	var func = _convertSize('0 МБ', ['бт', 'КБ', 'МБ', 'ГБ', 'ТБ'], 1, 2);
+				 *		func(10);	// 10 КБ
+				 *		func(1024); // 1 МБ
+				 */
+				
+				const _convertSize = function (zero, val, pow, dec)
+				{
+					var k = 1024,
+						z = zero || '0 Bytes',
+						s = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+						l = (val && val.length) || 0,
+						p = pow >= 0 && pow <= 8 ? pow : 0,
+						d = dec || 2,
+						f = p != 0 ? Math.pow(k,pow) : 1;				
+
+					if (l > 0 && l <= s.length)
+					{
+						while(--l) s[l] = val[l];
+						s[0] = val[0];
+					}
+
+					return function (size) 
+					{
+						if (size == 0) return z;
+
+						size = size * f;
+						var i = Math.floor(Math.log(size) / Math.log(k));
+
+						return '' + (parseFloat((size / Math.pow(k,i)).toFixed(d)) + ' ' + s[i]);
+					};
+				};
+
+				_utils.convertSizeRU = _convertSize('0 Мб', ['бт', 'Кб', 'Мб', 'Гб', 'Тб'], 1, 2);
+				_utils.convertSizeEN = _convertSize('0 MB', [], 1, 2);
 
 
 
