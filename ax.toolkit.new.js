@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.2  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.3  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.6.2';
+		  _v = '2.6.3';
 
 
 
@@ -186,12 +186,24 @@
 						},
 
 
+						/**
+						 * Возвращает контроллер для управления Dynamic Panel
+						 * @param  {string} path — путь к Dynamic Panel ('group_a/group_b/panelName')
+						 * @return {object} — контроллер Dynamic Panel
+						 */
+						
 						panel: function (path)
 						{
 							return new PanelController(this.find(path));
 						},
 
 
+						/**
+						 * Возвращает контроллер для управления Repeater
+						 * @param  {string} path — путь к Repeater ('group_a/group_b/repeaterName')
+						 * @return {object} — контроллер Repeater
+						 */
+						
 						repeater: function (path)
 						{
 							return new RepeaterController(this.find(path));
