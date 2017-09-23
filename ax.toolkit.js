@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.3  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.4  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.6.3';
+		  _v = '2.6.4';
 
 
 
@@ -737,20 +737,17 @@
 	
 				const PanelController = function (widgets)
 				{
+					console.log(_instance);
+
 					var list = this.list = [],
+						instance = _instance['panel'] = _instance['panel'] || {}, 
 						controller;
 
 					widgets.each(function(el, id)
 					{
 						if (el.type == 'dynamicPanel')
 						{
-							
-							if (!_instance[id]) {
-								controller = _instance[id] = new PanelExtension(el, id);
-							} else {
-								controller = _instance[id];
-							}
-
+							controller = instance[id] = instance[id] || new PanelExtension(el, id);
 							list.push(controller);
 						}
 					});
@@ -1041,6 +1038,7 @@
 				const RepeaterController = function (widget)
 				{
 					var single = widget.getElementIds().length == 1,
+						instance = _instance['repeater'] = _instance['repeater'] || {}, 
 						controller;
 
 					if (!single) return null;
@@ -1049,12 +1047,7 @@
 					{
 						if (el.type == 'repeater')
 						{
-							
-							if (!_instance[id]) {
-								controller = _instance[id] = new RepeaterExtension(el, id);
-							} else {
-								controller = _instance[id];
-							}
+							controller = instance[id] = instance[id] || new RepeaterExtension(el, id);
 						}
 					});
 
