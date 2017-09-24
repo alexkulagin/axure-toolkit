@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.4  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.5  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.6.4';
+		  _v = '2.6.5';
 
 
 
@@ -230,6 +230,8 @@
 				{
 					_private.evaluateSTO = _sto;
 					_private.public.fn.run = _run;
+					
+					_private.public.fn.fixed = _toFixed;
 
 					return true;
 				};
@@ -306,6 +308,37 @@
 
 					return '';
 				};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  CSS EXTENSIONS                         │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					/**
+					 * ...
+					 */
+					
+					const _toFixed = function (isFixed)
+					{
+						if (arguments[0] == undefined)
+						{
+							var firstId = this.getElementIds()[0];
+							if (!firstId) return null;
+
+							return _$('#' + firstId).css('position') == 'fixed';
+						}
+
+						this.each(function (element, elementId)
+						{
+							_$('#' + elementId).css({position: !isFixed ? '' : 'fixed' });
+						});
+
+
+						return this;
+					};
 
 
 
