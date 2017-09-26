@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.5  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.6  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.6.5';
+		  _v = '2.6.6';
 
 
 
@@ -232,6 +232,7 @@
 					_private.public.fn.run = _run;
 					
 					_private.public.fn.fixed = _toFixed;
+					_private.public.fn.ellipsis = _toEllipsis;
 
 					return true;
 				};
@@ -334,6 +335,35 @@
 						this.each(function (element, elementId)
 						{
 							_$('#' + elementId).css({position: !isFixed ? '' : 'fixed' });
+						});
+
+
+						return this;
+					};
+
+
+					/**
+					 * ...
+					 */
+					
+					const _toEllipsis = function (isEllipsis, width)
+					{
+						if (arguments[0] == undefined)
+						{
+							var firstId = this.getElementIds()[0];
+							if (!firstId) return null;
+
+							return _$('#' + firstId + ' p').css('text-overflow') == 'ellipsis';
+						}
+
+						this.each(function (element, elementId)
+						{
+							_$('#' + elementId + ' p').css({
+								'text-overflow': !isEllipsis ? '' : 'ellipsis',
+								'white-space': !isEllipsis ? '' : 'nowrap',
+								'overflow': !isEllipsis ? '' : 'hidden',
+								'width': !isEllipsis ? '' : width
+							});
 						});
 
 
