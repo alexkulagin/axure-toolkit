@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.6.6  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.7.8  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.6.6';
+		  _v = '2.7.8';
 
 
 
@@ -39,7 +39,7 @@
 	//│  ╚═══════════════════════════════╝
 	//┘	
 	
-		const _createToolkit = function (_w, _d, _v, _o)
+		const _createToolkit = function (_w, _d, _v, _o, _sheet)
 		{
 			if (!_w.$axure || !_w.jQuery) return null;
 
@@ -319,8 +319,12 @@
 				//┘
 
 					/**
-					 * ...
+					 * Фиксирует виджеты на странице.
+					 * @param  {boolean} isFixed — включить или выключить параметр фиксации
+					 * @return {boolean} если метод вызывается без параметров, то возвращается текущее состояние
 					 */
+					
+					_sheet.insertRule('.tool .el-fixed { position: fixed !important }', 0);
 					
 					const _toFixed = function (isFixed)
 					{
@@ -334,7 +338,7 @@
 
 						this.each(function (element, elementId)
 						{
-							_$('#' + elementId).css({position: !isFixed ? '' : 'fixed' });
+							_$('#' + elementId).toggleClass('el-fixed', isFixed);
 						});
 
 
@@ -343,8 +347,18 @@
 
 
 					/**
-					 * ...
+					 * Определяет параметры видимости текста в блоке. 
+					 * Текст обрезается, к концу строки добавляется многоточие.
+					 * @param  {boolean} isEllipsis — включить или выключить параметр видимости
+					 * @param  {number} width - максимальная ширина блока
+					 * @return {boolean} если метод вызывается без параметров, то возвращается текущее состояние
 					 */
+					
+					_sheet.insertRule('.tool .el-ellipsis { '
+					+	'text-overflow: ellipsis !important;'
+					+	'white-space: nowrap !important;'
+					+	'overflow: hidden !important;'
+					+'}', 0);
 					
 					const _toEllipsis = function (isEllipsis, width)
 					{
@@ -358,12 +372,9 @@
 
 						this.each(function (element, elementId)
 						{
-							_$('#' + elementId + ' p').css({
-								'text-overflow': !isEllipsis ? '' : 'ellipsis',
-								'white-space': !isEllipsis ? '' : 'nowrap',
-								'overflow': !isEllipsis ? '' : 'hidden',
-								'width': !isEllipsis ? '' : width
-							});
+							_$('#' + elementId + ' p')
+								.toggleClass('el-ellipsis', isEllipsis)
+								.css({ 'width': !isEllipsis ? '' : width });
 						});
 
 
@@ -2185,65 +2196,96 @@
 	
 		!(function (_w, _d)
 		{
-			var _open = _w.open;
+			var _open = _w.open,
+				_sheet;
 
 
-			/**
-			 * Переопределяет поведение window.open для активации возможности запуска сценариев
-			 * с помощью действия "Open Link in New Window/Tab". Для активации сценарий должен 
-			 * начинаться с "javascript:" и заканчиваться "void 0;"
-			 */
-			
-			_w.open = function (url)
-			{
-				if ((url.substring(0, 11) !== 'javascript:')) {
-					return _open.apply(null, arguments);
-				}
 
-				var script = url.substring(11).trim();
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  TOOLKIT STYLE SHEET                    │
+			//│  └─────────────────────────────────────────┘
+			//┘
 
-				/** ..можно перехватить и модифицировать script **/
-
-				try { eval(script) } 
-				catch (error) {
-					return console.error('Exception:\n' + error);
-				}
-			};
+				!(function () {
+					var docElement = _d.documentElement,
+						styleEl = _d.createElement('style');
+					docElement.className += ((docElement.className.length > 0 ? ' ' : '') + 'tool');
+					_d.head.appendChild(styleEl);
+					_sheet = styleEl.sheet;
+				})();
 
 
-			/**
-			 * Инициализатор Axure Toolkit
-			 */
 
-			var _initializer = null;
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  OVERRIDE WINDOW OPEN                   │
+			//│  └─────────────────────────────────────────┘
+			//┘
+
+				/**
+				 * Переопределяет поведение window.open для активации возможности запуска сценариев
+				 * с помощью действия "Open Link in New Window/Tab". Для активации сценарий должен 
+				 * начинаться с "javascript:" и заканчиваться "void 0;"
+				 */
+				
+				_w.open = function (url)
+				{
+					if ((url.substring(0, 11) !== 'javascript:')) {
+						return _open.apply(null, arguments);
+					}
+
+					var script = url.substring(11).trim();
+
+					/** ..можно перехватить и модифицировать script **/
+
+					try { eval(script) } 
+					catch (error) {
+						return console.error('Exception:\n' + error);
+					}
+				};
 
 
-			/**
-			 * Обработчики событий "DOMContentLoaded" и "onload"
-			 */
 
-			var _beforePageOnLoad = function ()
-			{
-				_initializer = _createToolkit(_w, _d, _v, _open);
-				_initializer && _initializer.beforeOnLoad();
-			};
+			//┐
+			//│  ┌─────────────────────────────────────────┐
+			//╠──┤  PAGE LOAD HANDLERS                     │
+			//│  └─────────────────────────────────────────┘
+			//┘
 
-			var _afterPageOnLoad =  function ()
-			{
-				_initializer && _initializer.afterOnLoad();
-				_initializer = null;
-				_open = null;
-			};
+				/**
+				 * Инициализатор Axure Toolkit
+				 */
+
+				var _initializer = null;
 
 
-			/**
-			 * "DOMContentLoaded" и "onload" предоставляют возможность вызова функции до
-			 * и после отработки события "OnPageLoad" ("OnPageLoad" — событие из прототипа,
-			 * которое срабатывает сразу после загрузки страницы целиком)
-			 */
-			
-			_w.onload = _afterPageOnLoad;
-			_d.addEventListener('DOMContentLoaded', _beforePageOnLoad);
+				/**
+				 * Обработчики событий "DOMContentLoaded" и "onload"
+				 */
+
+				var _beforePageOnLoad = function ()
+				{
+					_initializer = _createToolkit(_w, _d, _v, _open, _sheet);
+					_initializer && _initializer.beforeOnLoad();
+				};
+
+				var _afterPageOnLoad =  function ()
+				{
+					_initializer && _initializer.afterOnLoad();
+					_initializer = null;
+					_open = null;
+				};
+
+
+				/**
+				 * "DOMContentLoaded" и "onload" предоставляют возможность вызова функции до
+				 * и после отработки события "OnPageLoad" ("OnPageLoad" — событие из прототипа,
+				 * которое срабатывает сразу после загрузки страницы целиком)
+				 */
+				
+				_w.onload = _afterPageOnLoad;
+				_d.addEventListener('DOMContentLoaded', _beforePageOnLoad);
 
 
 		})(_w, _d);
