@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.7.9  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.8.0  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.7.9';
+		  _v = '2.8.0';
 
 
 
@@ -797,6 +797,19 @@
 
 				_utils.convertSizeRU = _convertSize('0 Мб', ['бт', 'Кб', 'Мб', 'Гб', 'Тб'], 1, 2);
 				_utils.convertSizeEN = _convertSize('0 MB', [], 1, 2);
+
+
+				/**
+				 * Генерирует уникальный идентификатор
+				 * @return {number} идентификатор
+				 */
+				
+				const _uniqueID = _utils.uniqueID = function ()
+				{
+					// 1 (Date.now().toString(36) + Math.random().toString(36).substr(2, 5)).toUpperCase();
+					// 2 (Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2)).toUpperCase();
+					return (Date.now().toString(36) + Math.random().toString(36).substr(2, 5)).toUpperCase();
+				};
 
 
 
