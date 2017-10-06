@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.8.0  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.0  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.8.0';
+		  _v = '2.9.0';
 
 
 
@@ -134,7 +134,7 @@
 						send: function (channel, message)
 						{
 							if (!channel || (!_isString(channel) && !_isArray(channel))) return;
-							_w.postMessage({ channel: channel, message: message }, '*');
+							_w.postMessage({ channel: channel, message: message, capturing: false }, '*');
 						},
 
 
@@ -434,6 +434,14 @@
 						index = 0,
 						item;
 
+					if (_w === _w.top || _w.name === 'mainFrame') {
+						data.capturing = true;
+					}
+
+					if (!data.capturing) {
+						return _parent.postMessage(data, '*');
+					}
+
 					for (index; index < _broadcastListeners.length; index++)
 					{
 						item = _broadcastListeners[index];
@@ -472,17 +480,10 @@
 						}
 					}
 
-					if (_parent !== source)
-					{
-						_parent.postMessage(data, '*');
-					}
-
 					if (_frames.length > 0) 
 					{
 						for (index = 0; index < _frames.length; index++) {
-							if (_frames[index] !== source) {
-								_frames[index].postMessage(data, '*');
-							}
+							_frames[index].postMessage(data, '*');
 						}
 					}
 				};
