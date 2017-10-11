@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.2  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.3  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.9.1';
+		  _v = '2.9.3';
 
 
 
@@ -233,6 +233,7 @@
 					
 					_private.public.fn.fixed = _toFixed;
 					_private.public.fn.ellipsis = _toEllipsis;
+					_private.public.fn.spin = _toSpin;
 
 					return true;
 				};
@@ -379,6 +380,30 @@
 
 
 						return this;
+					};
+
+
+					/**
+					 * [transform description]
+					 * @type {[type]}
+					 */
+					
+					_sheet.insertRule('@keyframes spin { '
+					+	'100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); }'
+					+'}', 0);
+
+					const _toSpin = function (speed)
+					{
+						if (!speed || !_isNumber(speed)) return this;
+
+						// animation:spin 10s linear infinite;
+						// @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+						this.each(function (element, elementId)
+						{
+							_$('#' + elementId)
+								.css({animation: 'spin ' + speed + 'ms linear infinite'});
+						});
 					};
 
 
