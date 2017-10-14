@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.3  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.4  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.9.3';
+		  _v = '2.9.4';
 
 
 
@@ -41,7 +41,7 @@
 	
 		const _createToolkit = function (_w, _d, _v, _o, _sheet)
 		{
-			if (!_w.$axure || !_w.jQuery) return null;
+			if (!_w.jQuery || !_w.$axure || !_w.$obj) return null;
 
 
 			const _a = _w.$axure,
@@ -207,6 +207,18 @@
 						repeater: function (path)
 						{
 							return new RepeaterController(this.find(path));
+						},
+
+
+						/**
+						 * Возвращает значение глобальной переменной
+						 * @param  {string} name — имя переменной
+						 * @return {string} — значение переменной
+						 */
+						
+						getVar: function (name)
+						{
+							return _a.getGlobalVariable(name);
 						}
 
 					};
