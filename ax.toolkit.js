@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.5  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.7  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.9.5';
+		  _v = '2.9.7';
 
 
 
@@ -258,6 +258,11 @@
 					_private.public.fn.fixed = _toFixed;
 					_private.public.fn.ellipsis = _toEllipsis;
 					_private.public.fn.spin = _toSpin;
+
+					
+					// активирует обычный курсор для кликабильных виджетов с признаком disabled
+					_sheet.insertRule('[disabled="disabled"] { cursor: default !important }', 0);
+
 
 					return true;
 				};
@@ -960,7 +965,7 @@
 						},
 
 
-						setSizeTransition: function (origin, durationIn, durationOut, easeIn, easeOut)
+						setSizeTween: function (origin, durationIn, durationOut, easeIn, easeOut)
 						{
 							var list = this.list,
 								controller;
@@ -968,7 +973,7 @@
 							for (var i = 0; i < list.length; i++)
 							{
 								controller = list[i];
-								controller.setSizeTransition(origin, durationIn, durationOut, easeIn, easeOut);
+								controller.setSizeTween(origin, durationIn, durationOut, easeIn, easeOut);
 							}
 						},
 
@@ -1120,7 +1125,7 @@
 
 
 						/**
-						 * [setSizeTransition description]
+						 * [setSizeTween description]
 						 * @param {[type]} origin      [description]
 						 * @param {[type]} durationIn  [description]
 						 * @param {[type]} durationOut [description]
@@ -1128,7 +1133,7 @@
 						 * @param {[type]} easeOut     [description]
 						 */
 						
-						setSizeTransition: function (origin, durationIn, durationOut, easeIn, easeOut)
+						setSizeTween: function (origin, durationIn, durationOut, easeIn, easeOut)
 						{
 							var _ = this.private,
 								id = _.id,
