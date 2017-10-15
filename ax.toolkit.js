@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.8  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.9  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.9.8';
+		  _v = '2.9.9';
 
 
 
@@ -770,6 +770,23 @@
 				const _isNumber = _utils.isNumber = function (n)
 				{
 					return !isNaN(parseFloat(n)) && isFinite(n);
+				};
+
+
+				/**
+				 * Поиск элемента в массиве
+				 * @param  {array} a - массив
+				 * @param  {*} b - объект поиска
+				 * @return {number} возвращает -1 или индекс найденного объекта
+				 */
+				
+				const _indexWhile = _utils.indexWhile = function (a, b)
+				{
+					var target = a, search = b,
+						l = target.length, i = 0;
+					while (i < l) {
+						if (target[i] === search) return i; i++;
+					} return -1;
 				};
 
 
