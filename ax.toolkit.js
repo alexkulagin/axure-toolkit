@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.7  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.8  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.9.7';
+		  _v = '2.9.8';
 
 
 
@@ -483,8 +483,10 @@
 				{
 					var source = event.source,
 						data = event.data,
+
 						channel = data.channel,
 						message = data.message,
+
 						index = 0,
 						item;
 
@@ -602,10 +604,10 @@
 				 * @param {object} target - объект поиска
 				 * @param {[string, array]} name - название виджета или список названий
 				 * @param {[number, array]} childId - индекс или список индексов потомков (dynamic panel or repeater)
-				 * @return {array} - возвращает список идентификаторов
+				 * @return {array} - возвращает список найденых идентификаторов (id)
 				 */
 				
-				const _findIDinRows = function (target, name, childId)
+				const _findInRows = function (target, name, childId)
 				{
 					if (!name)  return null;
 
@@ -657,7 +659,7 @@
 
 
 				/**
-				 * Формирует запрос для функции _findIDinRows
+				 * Формирует запрос для функции _findInRows
 				 * @param  {[number, array]} name - имя виджета
 				 * @return {string} - возвращает подготовленный запрос
 				 */
@@ -1120,7 +1122,7 @@
 								state = undefined;
 							}
 
-							return _findIDinRows(_.target, name, state);
+							return _findInRows(_.target, name, state);
 						},
 
 
@@ -1497,7 +1499,7 @@
 								rows = undefined;
 							}
 
-							ids = _findIDinRows(_.target, name, rows);
+							ids = _findInRows(_.target, name, rows);
 
 							return $axure(function (element, elementId)
 							{
