@@ -70,6 +70,7 @@
 				{
 					this.version = _v;
 					this.name = 'ax.toolkit';
+					this.uid = _uniqueID();
 
 					_w.$a = _a.query;
 					_w.$u = _utils;
@@ -475,7 +476,10 @@
 	
 				/**
 				 * Поддержка широковещательных сообщений в прототипе
-				 * 
+				 */
+
+
+				/**
 				 * Обработчик post message
 				 */
 				
