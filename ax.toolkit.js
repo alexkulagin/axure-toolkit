@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 2.9.9  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.0.0  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '2.9.9';
+		  _v = '3.0.0';
 
 
 
@@ -135,7 +135,7 @@
 						send: function (channel, message)
 						{
 							if (!channel || (!_isString(channel) && !_isArray(channel))) return;
-							_w.postMessage({ channel: channel, message: message, capturing: false }, '*');
+							_w.postMessage({ channel: channel, message: message, exceptions: [] }, '*');
 						},
 
 
@@ -490,17 +490,20 @@
 
 						channel = data.channel,
 						message = data.message,
+						exceptions = data.exceptions,
+
+						uid = _w.$m.uid,
 
 						index = 0,
 						item;
 
-					if (_w === _w.top || _w.name === 'mainFrame') {
-						data.capturing = true;
-					}
+					
+					// поиск текущего акна или фрейма в списке исключений
+					if (_indexWhile(exceptions, uid) >= 0) return;
 
-					if (!data.capturing) {
-						return _parent.postMessage(data, '*');
-					}
+					// добавление текущего окна или фрейма в список исключений
+					exceptions.push(uid);
+
 
 					for (index; index < _broadcastListeners.length; index++)
 					{
@@ -540,10 +543,12 @@
 						}
 					}
 
+					(_parent !== source) && _parent.postMessage(data, '*');
+
 					if (_frames.length > 0) 
 					{
 						for (index = 0; index < _frames.length; index++) {
-							_frames[index].postMessage(data, '*');
+							(_frames[index] !== source) && _frames[index].postMessage(data, '*');
 						}
 					}
 				};
