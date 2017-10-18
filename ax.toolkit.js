@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.0.0  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.0.3  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.0.0';
+		  _v = '3.0.3';
 
 
 
@@ -83,7 +83,7 @@
 
 					
 					_applyFixes();
-					_applyExtends();
+					_applyExtends(this);
 					_applyExternals();
 
 					_initialize();
@@ -123,38 +123,6 @@
 						addExpression: function (name, func)
 						{
 							_fn[name] = func;
-						},
-
-
-						/**
-						 * Отправляет сообщение
-						 * @param {string, array} channel - название канала или список каналов
-						 * @param {all} message - содержимое сообщения
-						 */
-						
-						send: function (channel, message)
-						{
-							if (!channel || (!_isString(channel) && !_isArray(channel))) return;
-							_w.postMessage({ channel: channel, message: message, exceptions: [] }, '*');
-						},
-
-
-						/**
-						 * Добавляет слушателя в рассылку
-						 * @param {string} channel - название канала
-						 * @param {function, string, array} listener - функция обратного вызова
-						 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
-						 *
-						 * listener value:
-						 * function - функция обратного вызова
-						 * string - вызывает OnMove в конкретном виджете (имя виджета)
-						 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
-						 */
-						
-						listen: function (channel, listener, once)
-						{
-							if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
-							_broadcastListeners.push({ channel: channel, listener: listener, once: once });
 						},
 
 
@@ -251,7 +219,7 @@
 				 * Регистрация функций-расширений
 				 */
 				
-				const _applyExtends = function ()
+				const _applyExtends = function (context)
 				{
 					_private.evaluateSTO = _sto;
 					_private.public.fn.run = _run;
@@ -259,6 +227,11 @@
 					_private.public.fn.fixed = _toFixed;
 					_private.public.fn.ellipsis = _toEllipsis;
 					_private.public.fn.spin = _toSpin;
+					
+
+					// Поддержка широковещательных сообщений в прототипе
+				 	_w.$send = context.send = _broadcastSender;
+				 	_w.$listen = context.listen = _broadcastListener;
 
 					
 					// активирует обычный курсор для кликабильных виджетов с признаком disabled
@@ -475,8 +448,66 @@
 			//┘	
 	
 				/**
-				 * Поддержка широковещательных сообщений в прототипе
+				 * Отправляет сообщение
+				 * @param {string, array} channel - название канала или список каналов
+				 * @param {all} message - содержимое сообщения
+				 * @param {string} direction - направление сообщения (self, parent, child, enywhere) по умолчанию enywhere
 				 */
+				
+				const _broadcastSender = function (channel, message, direction)
+				{
+					if (!channel || (!_isString(channel) && !_isArray(channel))) return;
+					_w.postMessage({ channel: channel, message: message, direction: direction || 'enywhere', exceptions: [], from: _w.$m.uid }, '*');
+				};
+
+
+				/**
+				 * Отправляет сообщение в пределах фрейма или окна
+				 */
+				
+				_broadcastSender['self'] = function (channel, message)
+				{
+					_broadcastSender(channel, message, 'self');
+				};
+
+
+				/**
+				 * Отправляет сообщение вверх родителям
+				 */
+				
+				_broadcastSender['parent'] = function (channel, message)
+				{
+					_broadcastSender(channel, message, 'parent');
+				};
+
+
+				/**
+				 * Отправляет сообщение вниз потомкам
+				 */
+				
+				_broadcastSender['child'] = function (channel, message)
+				{
+					_broadcastSender(channel, message, 'child');
+				};
+
+
+				/**
+				 * Добавляет слушателя в рассылку
+				 * @param {string} channel - название канала
+				 * @param {function, string, array} listener - функция обратного вызова
+				 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
+				 *
+				 * listener value:
+				 * function - функция обратного вызова
+				 * string - вызывает OnMove в конкретном виджете (имя виджета)
+				 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
+				 */
+				
+				const _broadcastListener =  function (channel, listener, once)
+				{
+					if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
+					_broadcastListeners.push({ channel: channel, listener: listener, once: once });
+				};
 
 
 				/**
@@ -490,7 +521,9 @@
 
 						channel = data.channel,
 						message = data.message,
+						direction = data.direction,
 						exceptions = data.exceptions,
+						from = data.from,
 
 						uid = _w.$m.uid,
 
@@ -505,52 +538,71 @@
 					exceptions.push(uid);
 
 
-					for (index; index < _broadcastListeners.length; index++)
+					// запуск обработки событий в текущем окне
+					if (from !== uid || direction == 'self' || direction == 'enywhere')
 					{
-						item = _broadcastListeners[index];
+						console.log(direction, 'EXECUTED ------------------------------------------------');
 
-						if (!item) continue;
-
-						if (item.channel === '*' || _isChannelMatch(item.channel, channel))
+						for (index; index < _broadcastListeners.length; index++)
 						{
-							var l = item.listener;
+							item = _broadcastListeners[index];
 
-							if (_isString(l)) {
-								_findWidgets(l).moveBy(0, 0, {});
-							}
+							if (!item) continue;
 
-							if (_isFunction(l)) {
-								l.call(_w, channel, message);
-							}
-
-							if (_isArray(l))
+							if (item.channel === '*' || _isChannelMatch(item.channel, channel))
 							{
-								for (var i = 0; i < l.length; i++)
-								{
-									if (_isString(l[i])) {
-										_findWidgets(l[i]).moveBy(0, 0, {});
-									}
+								var l = item.listener;
 
-									if (_isFunction(l[i])) {
-										l[i].call(_w, channel, message);
+								if (_isString(l)) {
+									_findWidgets(l).moveBy(0, 0, {});
+								}
+
+								if (_isFunction(l)) {
+									l.call(_w, channel, message);
+								}
+
+								if (_isArray(l))
+								{
+									for (var i = 0; i < l.length; i++)
+									{
+										if (_isString(l[i])) {
+											_findWidgets(l[i]).moveBy(0, 0, {});
+										}
+
+										if (_isFunction(l[i])) {
+											l[i].call(_w, channel, message);
+										}
 									}
 								}
-							}
 
-							if (item.once) {
-								delete _broadcastListeners[index];
+								if (item.once) {
+									delete _broadcastListeners[index];
+								}
 							}
 						}
 					}
 
-					(_parent !== source) && _parent.postMessage(data, '*');
 
-					if (_frames.length > 0) 
+					// ретрансляция сообщения
+					if (direction !== 'self')
 					{
-						for (index = 0; index < _frames.length; index++) {
-							(_frames[index] !== source) && _frames[index].postMessage(data, '*');
+						// сообщение родителям
+						if (direction === 'enywhere' || direction === 'parent') {
+							(_parent !== source && _w !== _w.top) && _parent.postMessage(data, '*');
+						}
+							
+						// сообщение потомкам
+						if (direction === 'enywhere' || direction === 'child')
+						{
+							if (_frames.length > 0) 
+							{
+								for (index = 0; index < _frames.length; index++) {
+									(_frames[index] !== source) && _frames[index].postMessage(data, '*');
+								}
+							}
 						}
 					}
+
 				};
 
 
