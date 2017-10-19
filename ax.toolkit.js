@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.0.3  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.0.5  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.0.3';
+		  _v = '3.0.5';
 
 
 
@@ -494,19 +494,50 @@
 				/**
 				 * Добавляет слушателя в рассылку
 				 * @param {string} channel - название канала
-				 * @param {function, string, array} listener - функция обратного вызова
+				 * @param {function, string, array} handler - функция обратного вызова
 				 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
+				 * @param {string} direction - направление сообщения (self, parent, child, enywhere) по умолчанию enywhere
 				 *
-				 * listener value:
+				 * handler value:
 				 * function - функция обратного вызова
 				 * string - вызывает OnMove в конкретном виджете (имя виджета)
 				 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
 				 */
 				
-				const _broadcastListener =  function (channel, listener, once)
+				const _broadcastListener =  function (channel, handler, once, direction)
 				{
-					if (!_isArray(listener) && !_isFunction(listener) && !_isString(listener)) return;
-					_broadcastListeners.push({ channel: channel, listener: listener, once: once });
+					if (!_isArray(handler) && !_isFunction(handler) && !_isString(handler)) return;
+					_broadcastListeners.push({ channel: channel, handler: handler, once: once, direction: direction || 'enywhere' });
+				};
+
+
+				/**
+				 * Слушает сообщение в пределах фрейма или окна
+				 */
+				
+				_broadcastListener['self'] = function (channel, handler, once)
+				{
+					_broadcastListener(channel, handler, once, 'self');
+				};
+
+
+				/**
+				 * Слушает сообщение отправленное родителю
+				 */
+				
+				_broadcastListener['parent'] = function (channel, handler, once)
+				{
+					_broadcastListener(channel, handler, once, 'parent');
+				};
+
+
+				/**
+				 * Слушает сообщение отправленное потомку
+				 */
+				
+				_broadcastListener['child'] = function (channel, handler, once)
+				{
+					_broadcastListener(channel, handler, once, 'child');
 				};
 
 
@@ -539,19 +570,17 @@
 
 
 					// запуск обработки событий в текущем окне
-					if (from !== uid || direction == 'self' || direction == 'enywhere')
+					if (from !== uid || direction === 'self' || direction === 'enywhere')
 					{
-						console.log(direction, 'EXECUTED ------------------------------------------------');
-
 						for (index; index < _broadcastListeners.length; index++)
 						{
 							item = _broadcastListeners[index];
 
-							if (!item) continue;
+							if (!item || (item.direction !== 'enywhere' && item.direction !== direction)) continue;
 
 							if (item.channel === '*' || _isChannelMatch(item.channel, channel))
 							{
-								var l = item.listener;
+								var l = item.handler;
 
 								if (_isString(l)) {
 									_findWidgets(l).moveBy(0, 0, {});
