@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.0.5  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.0  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.0.5';
+		  _v = '3.1.0';
 
 
 
@@ -496,6 +496,7 @@
 				 * @param {string} channel - название канала
 				 * @param {function, string, array} handler - функция обратного вызова
 				 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
+				 * @param {string} type - тип события, вызываемого в виджетах хандлерах
 				 * @param {string} direction - направление сообщения (self, parent, child, enywhere) по умолчанию enywhere
 				 *
 				 * handler value:
@@ -504,10 +505,39 @@
 				 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
 				 */
 				
-				const _broadcastListener =  function (channel, handler, once, direction)
+				const _broadcastListener =  function (channel, handler, once, type, direction)
 				{
 					if (!_isArray(handler) && !_isFunction(handler) && !_isString(handler)) return;
-					_broadcastListeners.push({ channel: channel, handler: handler, once: once, direction: direction || 'enywhere' });
+
+					type = _isString(arguments[2]) ? arguments[2] : type;
+					once = _isBoolean(arguments[2]) ? once : false;
+
+					switch (type) {
+						case 'move': case 'click': case 'selected': case 'enabled': break;
+						default: type = 'move';
+					}
+
+					var target, l, i, target, item;
+
+					if (handler !== undefined )
+					{
+						if (_isString(handler)) {
+							target = _findWidgets(handler);
+						}
+
+						else if (_isArray(handler))
+						{
+							l = handler.length; i = 0; target = []; item;
+							while (i < l) {
+								item = handler[i];
+								target[i] = _isString(item) ? _findWidgets(item) : undefined;
+
+								i++;
+							}
+						}
+					}
+
+					_broadcastListeners.push({ channel: channel, handler: handler, once: once, type: type, target: target, direction: direction || 'enywhere' });
 				};
 
 
@@ -515,9 +545,9 @@
 				 * Слушает сообщение в пределах фрейма или окна
 				 */
 				
-				_broadcastListener['self'] = function (channel, handler, once)
+				_broadcastListener['self'] = function (channel, handler, once, type)
 				{
-					_broadcastListener(channel, handler, once, 'self');
+					_broadcastListener(channel, handler, once, type, 'self');
 				};
 
 
@@ -525,9 +555,9 @@
 				 * Слушает сообщение отправленное родителю
 				 */
 				
-				_broadcastListener['parent'] = function (channel, handler, once)
+				_broadcastListener['parent'] = function (channel, handler, once, type)
 				{
-					_broadcastListener(channel, handler, once, 'parent');
+					_broadcastListener(channel, handler, once, type, 'parent');
 				};
 
 
@@ -535,9 +565,9 @@
 				 * Слушает сообщение отправленное потомку
 				 */
 				
-				_broadcastListener['child'] = function (channel, handler, once)
+				_broadcastListener['child'] = function (channel, handler, once, type)
 				{
-					_broadcastListener(channel, handler, once, 'child');
+					_broadcastListener(channel, handler, once, type, 'child');
 				};
 
 
@@ -558,8 +588,8 @@
 
 						uid = _w.$m.uid,
 
-						index = 0,
-						item;
+						listeners = _broadcastListeners, 
+						item, l, i;
 
 					
 					// поиск текущего акна или фрейма в списке исключений
@@ -572,42 +602,23 @@
 					// запуск обработки событий в текущем окне
 					if (from !== uid || direction === 'self' || direction === 'enywhere')
 					{
-						for (index; index < _broadcastListeners.length; index++)
+						l = listeners.length;
+						i = 0;
+
+						while (i < l)
 						{
-							item = _broadcastListeners[index];
+							item = listeners[i];
 
-							if (!item || (item.direction !== 'enywhere' && item.direction !== direction)) continue;
-
-							if (item.channel === '*' || _isChannelMatch(item.channel, channel))
+							if (item && (item.channel === '*' || _isChannelMatch(item.channel, channel)) && (item.direction === 'enywhere' || item.direction === direction))
 							{
-								var l = item.handler;
-
-								if (_isString(l)) {
-									_findWidgets(l).moveBy(0, 0, {});
-								}
-
-								if (_isFunction(l)) {
-									l.call(_w, channel, message);
-								}
-
-								if (_isArray(l))
-								{
-									for (var i = 0; i < l.length; i++)
-									{
-										if (_isString(l[i])) {
-											_findWidgets(l[i]).moveBy(0, 0, {});
-										}
-
-										if (_isFunction(l[i])) {
-											l[i].call(_w, channel, message);
-										}
-									}
-								}
-
-								if (item.once) {
-									delete _broadcastListeners[index];
-								}
+								_fireChannelMessage(item, channel, message);
 							}
+
+							if (item.once) {
+								delete listeners[i];
+							}
+
+							i++;
 						}
 					}
 
@@ -623,15 +634,66 @@
 						// сообщение потомкам
 						if (direction === 'enywhere' || direction === 'child')
 						{
-							if (_frames.length > 0) 
+							l = _frames.length; i = 0;
+							if (l > 0) 
 							{
-								for (index = 0; index < _frames.length; index++) {
-									(_frames[index] !== source) && _frames[index].postMessage(data, '*');
+								while (i < l) {
+									_frames[i].postMessage(data, '*'); i++;
 								}
 							}
 						}
 					}
 
+				};
+
+
+				const _fireChannelMessage = function (item, channel, message)
+				{
+					var handler = item.handler,
+						target = item.target,
+						type = item.type;
+
+					if (_isString(handler)) {
+						_fireWidgetEvent(target, type);
+					}
+
+					else if (_isFunction(handler)) {
+						handler.call(_w, channel, message);
+					}
+
+					else if (_isArray(handler))
+					{
+						var i = 0, l = handler.length, subhandler;
+
+						while (i < l)
+						{
+							subhandler = handler[i];
+
+							if (_isString(subhandler)) {
+								_fireWidgetEvent(target[i], type);
+							}
+
+							else if (_isFunction(subhandler)) {
+								subhandler.call(_w, channel, message);
+							}
+
+							i++;
+						}
+					}
+				};
+
+
+				const _fireWidgetEvent = function (target, type)
+				{
+					var t = target, e = type;
+
+					switch(e)
+					{
+						case 'move': t.moveBy(0, 0, {}); break;
+						case 'click': t.click(); break;
+						case 'selected': t.selected(true); break;
+						case 'enabled': t.enabled(true); break;
+					}
 				};
 
 
@@ -781,6 +843,10 @@
 				
 				const _findWidgets = function (path)
 				{
+					if (path.match('\/') === null) {
+						return _a('@' + path);
+					}
+
 					var query = _getFindWidgetsQuery(path),
 						list = [],
 						finded;
@@ -860,6 +926,12 @@
 				const _isNumber = _utils.isNumber = function (n)
 				{
 					return !isNaN(parseFloat(n)) && isFinite(n);
+				};
+
+
+				const _isBoolean = _utils.isBoolean = function (n)
+				{
+					return n === true || n === false || toString.call(n) === '[object Boolean]';
 				};
 
 
