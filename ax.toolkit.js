@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.3  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.4  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.1.3';
+		  _v = '3.1.4';
 
 
 
@@ -200,6 +200,32 @@
 						setVar: function (name, value)
 						{
 							_a.setGlobalVariable(name, value);
+						},
+
+
+						/**
+						 * Добавляет глобальный слушатель событий
+						 * @param {string} target - цель прослушивания (например document)
+						 * @param {string} event - прослушиваемое событие (например click)
+						 * @param {function} handler - обработчик
+						 */
+						
+						addGlobalListener: function (target, event, handler)
+						{
+							_applyGlobalListener(target, event, handler, false);
+						},
+
+
+						/**
+						 * Удаляет глобальный слушатель событий
+						 * @param {string} target - цель прослушивания (например document)
+						 * @param {string} event - прослушиваемое событие (например click)
+						 * @param {function} handler - обработчик
+						 */
+						
+						removeGlobalListener: function (target, event, handler)
+						{
+							_applyGlobalListener(target, event, handler, true);
 						}
 
 					};
@@ -442,7 +468,7 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  BROADCASTING                 ║
+			//╠──╢  BROADCASTING & EVENTS        ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
@@ -707,6 +733,34 @@
 					}
 
 					return false;
+				};
+
+
+				/**
+				 * Добавляет или удаляет глобальный слушатель событий
+				 * @param {string} target - цель прослушивания (например document)
+				 * @param {string} event - прослушиваемое событие (например click)
+				 * @param {function} handler - обработчик
+				 * @param {boolean} remove - удалить true и false добавить
+				 */
+				
+				const _applyGlobalListener = function (target, event, handler, remove)
+				{
+					var apply = function (frame, target, event, handler, remove)
+					{
+						var frames = frame.frames,
+							l = frames.length, 
+							i = 0;
+
+						frame[target][remove?'removeEventListener':'addEventListener'](event, handler, true);
+
+						while (i < l) {
+							apply(frames[i], target, event, handler, remove); i++;
+						}
+					};
+
+					try { apply(_w.top, target, event, handler, remove) }
+					catch (e) { _w[target][remove?'removeEventListener':'addEventListener'](event, handler, true) }
 				};
 
 
@@ -1209,9 +1263,7 @@
 
 							var fit = _.el.fitToContent;
 
-							//if (fit) return null;
 							if (fit) {
-								console.log(_);
 								_.target.$().css({'overflow':'hidden'});
 							};
 
