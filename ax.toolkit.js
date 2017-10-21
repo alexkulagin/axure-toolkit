@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.0  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.1  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.1.0';
+		  _v = '3.1.1';
 
 
 
@@ -497,7 +497,6 @@
 				 * @param {function, string, array} handler - функция обратного вызова
 				 * @param {boolean} once - отработает один раз и удалиться из списка слушателей
 				 * @param {string} type - тип события, вызываемого в виджетах хандлерах
-				 * @param {string} direction - направление сообщения (self, parent, child, enywhere) по умолчанию enywhere
 				 *
 				 * handler value:
 				 * function - функция обратного вызова
@@ -505,7 +504,7 @@
 				 * array - вызывает OnMove в конкретных виджетах (список имен) или вызывает функцию
 				 */
 				
-				const _broadcastListener =  function (channel, handler, once, type, direction)
+				const _broadcastListener =  function (channel, handler, once, type)
 				{
 					if (!_isArray(handler) && !_isFunction(handler) && !_isString(handler)) return;
 
@@ -537,37 +536,7 @@
 						}
 					}
 
-					_broadcastListeners.push({ channel: channel, handler: handler, once: once, type: type, target: target, direction: direction || 'enywhere' });
-				};
-
-
-				/**
-				 * Слушает сообщение в пределах фрейма или окна
-				 */
-				
-				_broadcastListener['self'] = function (channel, handler, once, type)
-				{
-					_broadcastListener(channel, handler, once, type, 'self');
-				};
-
-
-				/**
-				 * Слушает сообщение отправленное родителю
-				 */
-				
-				_broadcastListener['parent'] = function (channel, handler, once, type)
-				{
-					_broadcastListener(channel, handler, once, type, 'parent');
-				};
-
-
-				/**
-				 * Слушает сообщение отправленное потомку
-				 */
-				
-				_broadcastListener['child'] = function (channel, handler, once, type)
-				{
-					_broadcastListener(channel, handler, once, type, 'child');
+					_broadcastListeners.push({ channel: channel, handler: handler, once: once, type: type, target: target });
 				};
 
 
@@ -609,7 +578,7 @@
 						{
 							item = listeners[i];
 
-							if (item && (item.channel === '*' || _isChannelMatch(item.channel, channel)) && (item.direction === 'enywhere' || item.direction === direction))
+							if (item && (item.channel === '*' || _isChannelMatch(item.channel, channel)))
 							{
 								_fireChannelMessage(item, channel, message);
 							}
