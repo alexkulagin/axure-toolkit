@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.1  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.2  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.1.1';
+		  _v = '3.1.2';
 
 
 
@@ -163,7 +163,7 @@
 						
 						panel: function (path)
 						{
-							return new PanelController(this.find(path));
+							return new PanelController(_findWidgets(path));
 						},
 
 
@@ -175,7 +175,7 @@
 						
 						repeater: function (path)
 						{
-							return new RepeaterController(this.find(path));
+							return new RepeaterController(_findWidgets(path));
 						},
 
 
@@ -1027,130 +1027,24 @@
 			//│  ╚═══════════════════════════════╝
 			//┘	
 	
-				const PanelController = function (widgets)
+				const PanelController = function (widget)
 				{
-					var list = this.list = [],
+					var single = widget.getElementIds().length == 1,
 						instance = _instance['panel'] = _instance['panel'] || {}, 
 						controller;
 
-					widgets.each(function(el, id)
+					if (!single) return null;
+
+					widget.each(function(el, id)
 					{
 						if (el.type == 'dynamicPanel')
 						{
 							controller = instance[id] = instance[id] || new PanelExtension(el, id);
-							list.push(controller);
 						}
 					});
 
-					return (list.length != 0) ? this : null;
+					return controller || null;
 				};
-
-
-
-				//┐
-				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  PANEL CONTROLLER PUBLIC METHODS        │
-				//│  └─────────────────────────────────────────┘
-				//┘
-
-					PanelController.prototype = 
-					{	
-						
-						/**
-						 * Меняет состояние панели или возвращает объект текущего состояния
-						 * @param  {[number, string]} state — индекс состояния или лейбл
-						 * @param  {object} options — анимация перехода
-						 * @return {object} — возвращает объект текущего состояния
-						 */
-						
-						state: function (state, options)
-						{
-							var list = this.list,
-								first,
-								controller;
-
-							if (state == undefined)
-							{
-								controller = list[0];
-								return (controller) ? controller.state() : null;
-							}
-
-							for (var i = 0; i < list.length; i++)
-							{
-								controller = list[i];
-								controller.state(state, options);
-							}
-						},
-
-
-						/**
-						 * Возвращает по названию виджеты из конкретных состояний Dynamic Panel
-						 * @param {[string, array]} name - имя виджета или список имен
-						 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
-						 * @return {object} - возвращает объект виджета
-						 */
-						
-						find: function (name, state)
-						{
-							var list = this.list,
-								ids = [],
-								controller;
-
-							for (var i = 0; i < list.length; i++)
-							{
-								controller = list[i];
-								ids = ids.concat(controller.getWidgetIDs(name, state));
-							}
-
-							return $axure(function (element, elementId)
-							{
-								for (var i = 0; i < ids.length; i++) {
-									if (ids[i] == elementId) {
-										return true;
-									}
-								};
-
-								return false;
-							});
-						},
-
-
-						setSizeTween: function (origin, durationIn, durationOut, easeIn, easeOut)
-						{
-							var list = this.list,
-								controller;
-
-							for (var i = 0; i < list.length; i++)
-							{
-								controller = list[i];
-								controller.setSizeTween(origin, durationIn, durationOut, easeIn, easeOut);
-							}
-						},
-
-						sizeIn: function ()
-						{
-							var list = this.list,
-								controller;
-
-							for (var i = 0; i < list.length; i++)
-							{
-								controller = list[i];
-								controller.sizeIn();
-							}
-						},
-
-						sizeOut: function ()
-						{
-							var list = this.list,
-								controller;
-
-							for (var i = 0; i < list.length; i++)
-							{
-								controller = list[i];
-								controller.sizeOut();
-							}
-						}
-					};
 
 
 
@@ -1247,6 +1141,30 @@
 							if (nextState && nextState.index != currentState.index) {
 								_.target.SetPanelState(nextState.index, options);
 							}
+						},
+
+
+						/**
+						 * Возвращает по названию виджеты из конкретных состояний Dynamic Panel
+						 * @param {[string, array]} name - имя виджета или список имен
+						 * @param {[number, array]} state - индекс/состояние или список индексов/состояний
+						 * @return {object} - возвращает объект виджета
+						 */
+						
+						find: function (name, state)
+						{
+							var ids = this.getWidgetIDs(name, state);
+
+							return $axure(function (element, elementId)
+							{
+								for (var i = 0; i < ids.length; i++) {
+									if (ids[i] == elementId) {
+										return true;
+									}
+								};
+
+								return false;
+							});
 						},
 
 
