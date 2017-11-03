@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.0  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.1  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.2.0';
+		  _v = '3.2.1';
 
 
 
@@ -1583,7 +1583,7 @@
 						 * @return {array} возвращает список подготовленных строк
 						 */
 						
-						newRows: function (list)
+						setData: function (list)
 						{
 							if (!_isArray(list)) return null;
 
@@ -1597,6 +1597,60 @@
 							}
 							
 							return rows;
+						},
+
+
+						/**
+						 * Находит и возвращает данные строк по условию
+						 * @param {boolean} isobj - возвращать данные в объектном представлении
+						 * @param {[object, number, array]} filter - условия для возврата
+						 * @param {boolean} exclude - режим исключения
+						 * @param {boolean} visible - возвращает только отображаемые строки
+						 * @return {array} - возвращает преобразованные данные найденых строк
+						 */
+						
+						getData: function (isobj, filter, exclude, visible)
+						{
+							var _ = this.private,
+								schema = _.schema,
+								
+								model = this.get(filter, exclude, visible),
+								data = [],
+
+								i = 0, ml = model.length,
+								j = 0, sl = schema.length,
+
+								row, label, cell, item;
+
+							while (i < ml)
+							{
+								row = model[i];
+								j = 0;
+
+								item = isobj ? {} : [];
+
+								while (j < sl)
+								{
+									label = schema[j];
+									cell = row.hasOwnProperty(label) ? row[label].text : null;
+
+									if (isobj && cell !== null) {
+										item[label] = cell;
+									}
+
+									else if (!isobj) {
+										item[j] = (_isString(cell) || _isNumber(cell)) ? cell : '';
+									}
+
+									j++
+								}
+
+								data[i] = item;
+
+								i++;
+							}
+
+							return data;
 						},
 
 
