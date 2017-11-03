@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.9  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.0  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.1.9';
+		  _v = '3.2.0';
 
 
 
@@ -1461,6 +1461,7 @@
 					_.el = el;
 					_.id = id;
 					_.states = _getPanelStates(id);
+					_.schema = el.dataProps;
 
 					_.rows = _.el.data;
 
@@ -1538,6 +1539,64 @@
 							var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
 								result = !filter ? model : _filter(model, filter, exclude, true);
 							return result;
+						},
+
+
+						/**
+						 * Создает из данных строку
+						 * @param  {[object, array]} data — массив или объект с перечисленными значениями ячеек
+						 * @return {object} возвращает подготовленную строку
+						 *
+						 *	// перечисление значений ячеек
+						 *	newRow(['admin', 'SuperAdmin', 30]);
+						 *
+						 *	// тоже самое только в объекте 
+						 *	newRow({ type: 'admin', role: 'SuperAdmin', index: 30 });
+						 */
+						
+						newRow: function (data)
+						{
+							var _ = this.private,
+								schema = _.schema, row = {}, cell, label,
+								i = 0, l = schema.length,
+								isarr = _isArray(data);
+
+							if (!isarr && !(_isObject(data) && !_isFunction(data))) return null;
+
+							while (i < l)
+							{
+								label = schema[i];
+								cell = isarr ? data[i] : data.hasOwnProperty(label) ? data[label] : null;
+								
+								if ((_isString(cell) || _isNumber(cell)) && cell !== '') {
+									row[label] = { type: 'text', text: cell + '' };
+								} i++;
+							}
+
+							return row;
+						},
+
+
+						/**
+						 * Создает из данных список строк
+						 * @param  {array} list — список данных
+						 * @return {array} возвращает список подготовленных строк
+						 */
+						
+						newRows: function (list)
+						{
+							if (!_isArray(list)) return null;
+
+							var rows = [], row,
+							i = 0, l = list.length;
+							
+							while (i < l) {
+								row = this.newRow(list[i]);
+								(row !== null) && rows.push(row);
+								i++;
+							}
+							
+							return rows;
 						},
 
 
