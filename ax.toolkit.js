@@ -968,15 +968,16 @@
 			//│  ╚═══════════════════════════════╝
 			//┘	
 	
-				const _isArray = _utils.isArray = Array.isArray || function(obj)
+				const _isObject = _utils.isObject = function (n)
 				{
-					return toString.call(obj) === '[object Array]';
+					var type = typeof n;
+					return type === 'function' || type === 'object' && !!n;
 				};
 
 
-				const _isString = _utils.isString = function (str)
+				const _isArray = _utils.isArray = Array.isArray || function(obj)
 				{
-					return typeof str === 'string' || str instanceof String;
+					return toString.call(obj) === '[object Array]';
 				};
 
 
@@ -989,6 +990,12 @@
 				const _isNumber = _utils.isNumber = function (n)
 				{
 					return !isNaN(parseFloat(n)) && isFinite(n);
+				};
+
+
+				const _isString = _utils.isString = function (str)
+				{
+					return typeof str === 'string' || str instanceof String;
 				};
 
 
@@ -1007,8 +1014,7 @@
 				
 				const _indexWhile = _utils.indexWhile = function (a, b)
 				{
-					var target = a, search = b,
-						l = target.length, i = 0;
+					var target = a, search = b, l = target.length, i = 0;
 					while (i < l) {
 						if (target[i] === search) return i; i++;
 					} return -1;
