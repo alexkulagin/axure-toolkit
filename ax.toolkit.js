@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.8  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.9  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.1.8';
+		  _v = '3.1.9';
 
 
 
@@ -1518,6 +1518,24 @@
 
 
 						/**
+						 * Находит и возвращает индексы строк по условию
+						 * @param {object} filter - условия для возврата
+						 * @param {boolean} exclude - режим исключения
+						 * @param {boolean} visible - возвращает индексы только отображаемых строк
+						 * @return {array} - возвращает список индексы строк
+						 *
+						 * С пустым фильтром возвращает все индексы
+						 */
+						
+						getRows: function (filter, exclude, visible)
+						{
+							var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
+								result = !filter ? model : _filter(model, filter, exclude, true);
+							return result;
+						},
+
+
+						/**
 						 * Возвращает признак наличия колонки в Repeater
 						 * @param  {string} col - название колонки
 						 * @return {boolean} - возвращает true или false
@@ -1987,7 +2005,7 @@
 					 * @return {array} - возвращает отфильтрованные строки
 					 */
 					
-					const _filter = function (model, filter, exclude)
+					const _filter = function (model, filter, exclude, indexes)
 					{
 						if (!filter || !filter.condition) return [];
 
@@ -1996,7 +2014,9 @@
 							mode = filter.any || false,
 							exclude = exclude || false,
 
-							all, any, text, flag, cp,
+							rows = [],
+
+							bool, all, any, text, flag, cp,
 
 							result = _$.grep(model, function( n, i )
 							{
@@ -2036,10 +2056,14 @@
 
 								}
 
-								return !mode ? all : any;
+								bool = !mode ? all : any;
+
+								bool && rows.push(i + 1);
+
+								return bool;
 							});
 
-						return result;
+						return indexes ? rows : result;
 					};
 
 
