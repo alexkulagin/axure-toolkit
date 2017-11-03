@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.7  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.1.8  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.1.7';
+		  _v = '3.1.8';
 
 
 
@@ -2005,37 +2005,35 @@
 
 								for (var prop in condition)
 								{
-									if (n.hasOwnProperty(prop)) 
+									flag = false;
+									text = n.hasOwnProperty(prop) ? n[prop].text : '';
+									cp = condition[prop];
+
+									// multi condition
+									if (_isArray(cp))
 									{
-										flag = false;
-										text = n[prop].text;
-										cp = condition[prop];
-
-										// multi condition
-										if (_isArray(cp))
+										for (var c in cp)
 										{
-											for (var c in cp)
-											{
-												if (text == cp[c]) {
-													flag = true;
-												}
-											}
-										} 
-
-										// single condition
-										else 
-										{
-											if (text == cp) {
+											if (text == cp[c]) {
 												flag = true;
 											}
 										}
+									} 
 
-										if (flag) {
-											any = exclude ? false : true;
-										} else {
-											all = exclude ? true : false;
+									// single condition
+									else 
+									{
+										if (text == cp) {
+											flag = true;
 										}
 									}
+
+									if (flag) {
+										any = exclude ? false : true;
+									} else {
+										all = exclude ? true : false;
+									}
+
 								}
 
 								return !mode ? all : any;
