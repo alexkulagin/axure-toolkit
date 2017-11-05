@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.1  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.2  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.2.1';
+		  _v = '3.2.2';
 
 
 
@@ -2546,40 +2546,52 @@
 				{
 					console.log('Axure Toolkit initialization...');
 
-					var bundle = [], imports = [], init = [], i;
+					var bundle = [], imports = [], init = [], i, l;
 
 					_a('*').each(function(element, elementId)
 					{
-						if (element.label) {
-							element.label.match('ax.bundle') && bundle.push(element);
-							element.label.match('ax.import') && imports.push(element);
-							element.label.match('ax.init') && init.push(element);
+						if (element.label)
+						{
+							if (element.label.match('ax.bundle')) {
+								bundle.push(element);
+							}
+
+							else if (element.label.match('ax.import')) {
+								imports.push(element);
+							}
+
+							else if (element.label.match('ax.init')) { 
+								init.push(element);
+							}
 						}
 					});
 
 					if (imports.length > 0) 
 					{
-						for (i = 0; i < imports.length; i++)
-						{
-							_a('@' + imports[i].label).run().$().remove();
+						i = 0; l = imports.length;
+
+						while (i < l) {
+							_a('@' + imports[i].label).run().$().remove(); i++;
 						}
 					}
 
 					if (bundle.length > 0)
 					{
-						for (i = 0; i < bundle.length; i++)
-						{
-							_a('@' + bundle[i].label).$().remove();
+						i = 0; l = bundle.length;
+
+						while (i < l) {
+							_a('@' + bundle[i].label).$().remove(); i++;
 						}
 					}
 
-					_a('@ax.ready').moveBy(0, 0, {});
+					_a('@ax.ready').moveBy(0, 0, {}).$().remove();
 
 					if (init.length > 0) 
 					{
-						for (i = 0; i < init.length; i++)
-						{
-							_a('@' + init[i].label).moveBy(0, 0, {});
+						i = 0; l = init.length;
+
+						while (i < l) {
+							_a('@' + init[i].label).moveBy(0, 0, {}).$().remove(); i++;
 						}
 					}
 				};
@@ -2588,14 +2600,14 @@
 				const _beforeOnLoad = function ()
 				{
 					console.log('before OnPageLoad...');
-					_a('@ax.before').moveBy(0, 0, {});
+					_a('@ax.before').moveBy(0, 0, {}).$().remove();
 				};
 
 
 				const _afterOnLoad = function ()
 				{
 					console.log('after OnPageLoad...');
-					_a('@ax.after').moveBy(0, 0, {});
+					_a('@ax.after').moveBy(0, 0, {}).$().remove();
 				};
 
 
