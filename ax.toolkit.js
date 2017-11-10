@@ -1080,7 +1080,7 @@
 						s = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
 						l = (val && val.length) || 0,
 						p = pow >= 0 && pow <= 8 ? pow : 0,
-						d = dec || 2,
+						d = (dec || dec == 0) ? dec : 2,
 						f = p != 0 ? Math.pow(k,pow) : 1;				
 
 					if (l > 0 && l <= s.length)
@@ -1089,14 +1089,14 @@
 						s[0] = val[0];
 					}
 
-					return function (size) 
+					return function (size, dec, sep, zero)
 					{
-						if (size == 0) return z;
+						if (size == 0) return zero || z;
 
 						size = size * f;
 						var i = Math.floor(Math.log(size) / Math.log(k));
 
-						return '' + (parseFloat((size / Math.pow(k,i)).toFixed(d)) + ' ' + s[i]);
+						return '' + (parseFloat((size / Math.pow(k,i)).toFixed((dec || dec == 0) ? dec : d)) + (sep || ' ') + s[i]);
 					};
 				};
 
