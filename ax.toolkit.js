@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.2  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.3  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.2.2';
+		  _v = '3.2.3';
 
 
 
@@ -174,9 +174,9 @@
 						 * @return {object} — контроллер Repeater
 						 */
 						
-						repeater: function (path)
+						table: function (path)
 						{
-							return new RepeaterController(_findWidgets(path));
+							return new TableController(_findWidgets(path));
 						},
 
 
@@ -1411,12 +1411,12 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  REPEATER CONTROLLER          ║
+			//╠──╢  TABLE CONTROLLER             ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
 	
-				const RepeaterController = function (widget)
+				const TableController = function (widget)
 				{
 					var single = widget.getElementIds().length == 1,
 						instance = _instance['repeater'] = _instance['repeater'] || {}, 
@@ -1428,7 +1428,7 @@
 					{
 						if (el.type == 'repeater')
 						{
-							controller = instance[id] = instance[id] || new RepeaterExtension(el, id);
+							controller = instance[id] = instance[id] || new TableExtension(el, id);
 						}
 					});
 
@@ -1441,7 +1441,7 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  REPEATER EXTENSION           ║
+			//╠──╢  TABLE EXTENSION              ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
@@ -1453,7 +1453,7 @@
 				 * @param {string} id - идентификатор HTML представления
 				 */
 				
-				function RepeaterExtension (el, id)
+				function TableExtension (el, id)
 				{
 					var _ = {};
 					
@@ -1479,11 +1479,11 @@
 
 				//┐
 				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  REPEATER EXTENSION PUBLIC METHODS      │
+				//╠──┤  TABLE EXTENSION PUBLIC METHODS         │
 				//│  └─────────────────────────────────────────┘
 				//┘
 
-					RepeaterExtension.prototype = 
+					TableExtension.prototype = 
 					{
 						
 						// ВОЗВРАЩАЮТ ЗНАЧЕНИЯ
@@ -2076,7 +2076,7 @@
 
 				//┐
 				//│  ┌─────────────────────────────────────────┐
-				//╠──┤  REPEATER EXTENSION PRIVATE METHODS     │
+				//╠──┤  TABLE EXTENSION PRIVATE METHODS        │
 				//│  └─────────────────────────────────────────┘
 				//┘
 
@@ -2281,7 +2281,7 @@
 			//┐
 			//│  ╔═══════════════════════════════╗
 			//│  ║                               ║
-			//╠──╢  REPEATER DEPENDENCIES        ║
+			//╠──╢  TABLE DEPENDENCIES           ║
 			//│  ║                               ║
 			//│  ╚═══════════════════════════════╝
 			//┘	
