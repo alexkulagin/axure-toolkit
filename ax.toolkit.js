@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.3  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.5  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.2.3';
+		  _v = '3.2.5';
 
 
 
@@ -467,6 +467,69 @@
 							_$('#' + elementId)
 								.css({animation: 'spin ' + speed + 'ms linear infinite'});
 						});
+					};
+
+
+
+				//┐
+				//│  ┌─────────────────────────────────────────┐
+				//╠──┤  JQUERY EXTENSIONS                      │
+				//│  └─────────────────────────────────────────┘
+				//┘
+
+					/**
+					 * Проверяет наличие обработчика в слушателе события.
+					 * @param  {string} e — название события
+					 * @param  {[string, null]} s — namespace события
+					 * @param  {[string, null]} n — название обработчика
+					 * @return {boolean} если обработчик найден возвращает true
+					 *
+					 *	$object.on('click.uploader', executeUploaderScript);
+					 *	
+					 *	$object.hasEventHandler('click'); // true
+					 *	$object.hasEventHandler('click', 'uploader'); // true
+					 *	$object.hasEventHandler('click', 'uploader', 'executeUploaderScript'); // true
+					 *	$object.hasEventHandler('click', null, 'executeUploaderScript'); // true
+					 *	$object.hasEventHandler('click', 'preloader'); // false
+					 *
+					 *	if ($object.hasEventHandler('click', 'uploader')) {
+					 *		$object.off('click.uploader');
+					 *	}
+					 * 
+					 */
+					
+					_$.fn.hasEventHandler = function (e, s, n)
+					{
+						if (e && typeof(jQuery._data) == 'function')
+						{
+							var ev = jQuery._data(this.get(0), 'events') || {};
+
+							if (ev.hasOwnProperty(e))
+							{
+								if (s || n)
+								{
+									var list = ev[e], 
+										i = 0, l = list.length, 
+										event, bool;
+
+									while (i < l)
+									{
+										event = list[i];
+										bool = true;
+
+										if (s && event.namespace !== s) { bool = false }
+										if (bool && n && event.handler.n !== n) { bool = false }
+										if (bool) { return true }
+
+										i++;
+									}
+								} 
+
+								else { return true }
+							}
+						}
+
+						return false;
 					};
 
 
@@ -1022,6 +1085,26 @@
 
 
 				/**
+				 * Возвращает случайное целое число в диапазоне
+				 */
+				
+				const _rangeInt = _utils.rangeInt = function (min, max)
+				{ 
+					return Math.floor(Math.random() * (max - min)) + min;
+				};
+
+
+				/**
+				 * Возвращает случайное число в диапазоне
+				 */
+				
+				const _range = _utils.range = function (min, max)
+				{ 
+					return Math.random() * (max - min) + min;
+				};
+
+
+				/**
 				 * Возвращает склонение числа 
 				 * @param  {number} n — число
 				 * @param  {array} t — список вариантов
@@ -1419,7 +1502,7 @@
 				const TableController = function (widget)
 				{
 					var single = widget.getElementIds().length == 1,
-						instance = _instance['repeater'] = _instance['repeater'] || {}, 
+						instance = _instance['table'] = _instance['table'] || {}, 
 						controller;
 
 					if (!single) return null;
