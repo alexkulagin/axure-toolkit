@@ -4,7 +4,7 @@
 /*
  ╔═════════════════════════════════════════════════════════════════╗
  ║       _                  ____            _       _              ║
- ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.4  ║
+ ║      | | __ ___   ____ _/ ___|  ___ _ __(_)_ __ | |_   • 3.2.5  ║
  ║   _  | |/ _` \ \ / / _` \___ \ / __| '__| | '_ \| __|           ║
  ║  | |_| | (_| |\ V / (_| |___) | (__| |  | | |_) | |_            ║
  ║   \___/ \__,_| \_/ \__,_|____/ \___|_|  |_| .__/ \__|           ║
@@ -26,7 +26,7 @@
 
 	const _w = window,
 		  _d = document,
-		  _v = '3.2.4';
+		  _v = '3.2.5';
 
 
 
@@ -1214,7 +1214,7 @@
 				{
 					var single = widget.getElementIds().length == 1,
 						instance = _instance['panel'] = _instance['panel'] || {}, 
-						controller;
+						controller = null;
 
 					if (!single) return null;
 
@@ -1226,7 +1226,7 @@
 						}
 					});
 
-					return controller || null;
+					return controller;
 				};
 
 
@@ -1503,7 +1503,7 @@
 				{
 					var single = widget.getElementIds().length == 1,
 						instance = _instance['table'] = _instance['table'] || {}, 
-						controller;
+						controller = null;
 
 					if (!single) return null;
 
@@ -1515,7 +1515,7 @@
 						}
 					});
 
-					return controller || null;
+					return controller;
 				};
 
 
@@ -1612,15 +1612,18 @@
 						 * @param {object} filter - условия для возврата
 						 * @param {boolean} exclude - режим исключения
 						 * @param {boolean} visible - возвращает индексы только отображаемых строк
+						 * @param {boolean} base - возвращает исходные индексы
 						 * @return {array} - возвращает список индексы строк
 						 *
 						 * С пустым фильтром возвращает все индексы
 						 */
 						
-						getRows: function (filter, exclude, visible)
+						getIndexes: function (filter, exclude, visible, base)
 						{
-							var model = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
-								result = !filter ? model : _filter(model, filter, exclude, true);
+							var current = visible && this.filtered ? _applyFilters(this.filters, this.model) : this.model,
+								filtered = !filter ? current : _filter(current, filter, exclude, true),
+								result = _getRowsIndexes(base ? this.model : current, filtered);
+							
 							return result;
 						},
 
@@ -1631,13 +1634,13 @@
 						 * @return {object} возвращает подготовленную строку
 						 *
 						 *	// перечисление значений ячеек
-						 *	newRow(['admin', 'SuperAdmin', 30]);
+						 *	createRow(['admin', 'SuperAdmin', 30]);
 						 *
 						 *	// тоже самое только в объекте 
-						 *	newRow({ type: 'admin', role: 'SuperAdmin', index: 30 });
+						 *	createRow({ type: 'admin', role: 'SuperAdmin', index: 30 });
 						 */
 						
-						newRow: function (data)
+						createRow: function (data)
 						{
 							var _ = this.private,
 								schema = _.schema, row = {}, cell, label,
@@ -1674,7 +1677,7 @@
 							i = 0, l = list.length;
 							
 							while (i < l) {
-								row = this.newRow(list[i]);
+								row = this.createRow(list[i]);
 								(row !== null) && rows.push(row);
 								i++;
 							}
@@ -2207,7 +2210,7 @@
 					 * @return {array} - возвращает отфильтрованные строки
 					 */
 					
-					const _filter = function (model, filter, exclude, indexes)
+					const _filter = function (model, filter, exclude)
 					{
 						if (!filter || !filter.condition) return [];
 
@@ -2215,8 +2218,6 @@
 						
 							mode = filter.any || false,
 							exclude = exclude || false,
-
-							rows = [],
 
 							bool, all, any, text, flag, cp,
 
@@ -2260,12 +2261,10 @@
 
 								bool = !mode ? all : any;
 
-								bool && rows.push(i + 1);
-
 								return bool;
 							});
 
-						return indexes ? rows : result;
+						return result;
 					};
 
 
@@ -2356,6 +2355,41 @@
 
 						// если фильтр объект условий
 						return _filter(model, filter, exclude);
+					};
+
+
+					/**
+					 * Возвращает индексы строк
+					 * @param {array} base - список строк с индексами
+					 * @param {array} filtered - список отфильтрованных строк для поиска
+					 * @return {array} - возвращает список индексы строк
+					 */
+					
+					const _getRowsIndexes = function (base, filtered)
+					{
+						var result = [],
+							len1 = filtered.length,
+							len2 = base.length,
+							i = 0, j, row;
+
+						while (i < len1) {
+
+							row = filtered[i];
+							j = 0;
+
+							while (j < len2) {
+
+								if (row === base[j]) {
+									result.push(j+1); break;
+								}
+
+								j++;
+							}
+
+							i++;
+						}
+
+						return result;
 					};
 
 
